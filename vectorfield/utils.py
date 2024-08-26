@@ -27,6 +27,24 @@ def vee(R):
     """Maps a skew-symmetric matrix to a vector"""
     return np.array([[R[2,1]], [R[0,2]], [R[1,0]]])
 
+def to_htm(p=None, R=None):
+    """Converts a position and orientation to a homogeneous transformation matrix.
+    """
+    if p is None:
+        p = np.zeros((3, 1))
+    if R is None:
+        R = np.eye(3)
+    p = p.ravel()
+    htm = np.array(
+        [
+            [R[0, 0], R[0, 1], R[0, 2], p[0]],
+            [R[1, 0], R[1, 1], R[1, 2], p[1]],
+            [R[2, 0], R[2, 1], R[2, 2], p[2]],
+            [0, 0, 0, 1],
+        ]
+    )
+    return htm
+
 def progress_bar(i, imax):
     sys.stdout.write("\r")
     sys.stdout.write(

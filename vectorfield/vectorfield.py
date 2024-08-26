@@ -5,12 +5,14 @@ from .utils import skew, vee
 
 _INVHALFPI = 0.63660
 
+
 class VectorField:
-    """Vector Field class. Uses extension to the vector field presented in:
-    A. M. C. Rezende, V. M. Goncalves and L. C. A. Pimenta, "Constructive Time-
-    Varying Vector Fields for Robot Navigation," in IEEE Transactions on
-    Robotics, vol. 38, no. 2, pp. 852-867, April 2022,
-    doi: 10.1109/TRO.2021.3093674.
+    """Vector Field class. Implementation of the vector field described in the
+    accepted paper:
+
+    Felipe B. A. Pessoa,  Luciano C. A. Pimenta, "Vector Field Based Adaptive
+    Control for Collaborative Manipulation" in: XXV Congresso Brasileiro de
+    Automática (CBA), 2024.
 
     Parameters
     ----------
@@ -40,12 +42,16 @@ class VectorField:
         The default is 1.
     g_function : function, optional
         A function that computes the function G of the vector field. The default
-        is None, which uses the default function used in the paper. The instance
-        will be passe to the user-defined function as an argument 'instance'.
+        is None, which uses the default function used in the paper. The minimum
+        distance will be passed to the user-defined function as the first argument
+        'min_dist', and the instance will be passe to the user-defined function
+        as a second argument 'instance'.
     h_function : function, optional
         A function that computes the function H of the vector field. The default
-        is None, which uses the default function used in the paper. The instance
-        will be passe to the user-defined function as an argument 'instance'.
+        is None, which uses the default function used in the paper. The minimum
+        distance will be passed to the user-defined function as the first argument
+        'min_dist', and the instance will be passe to the user-defined function
+        as a second argument 'instance'.
     *args:
         Additional positional arguments to be passed to the user-defined
         functions or used to configure the default functions.
@@ -262,7 +268,12 @@ class VectorField:
 
         # Compute the numerical approximation of the time derivative
         current_vf = self.psi(position, orientation, time, store_points=False)
-        next_vf = self.psi(position + l_velocity * self.dt, expm(skew(a_velocity) * self.dt) @ orientation, time + self.dt, store_points=False)
+        next_vf = self.psi(
+            position + l_velocity * self.dt,
+            expm(skew(a_velocity) * self.dt) @ orientation,
+            time + self.dt,
+            store_points=False,
+        )
         dot_psi = (next_vf - current_vf) / self.dt
 
         return dot_psi
