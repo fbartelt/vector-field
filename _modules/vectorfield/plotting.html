@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vectorfield.plotting &mdash; vector-field 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            vector-field
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">vectorfield</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">vector-field</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">vectorfield.plotting</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for vectorfield.plotting</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">plotly.colors</span> <span class="k">as</span> <span class="nn">pc</span>
+<span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="vector_field_plot">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.plotting.vector_field_plot">[docs]</a>
+<span class="k">def</span> <span class="nf">vector_field_plot</span><span class="p">(</span>
+    <span class="n">coordinates</span><span class="p">,</span>
+    <span class="n">field_values</span><span class="p">,</span>
+    <span class="n">orientations</span><span class="p">,</span>
+    <span class="n">curve</span><span class="p">,</span>
+    <span class="n">num_arrows</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">init_ball</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">final_ball</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">num_balls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">add_lineplot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">colorscale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">show_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a vector field in 3D. The vectors are represented as cones and the</span>
+<span class="sd">    auxiliary lineplot is used to represent arrow tails. The kwargs are passed</span>
+<span class="sd">    to the go.Cone function. Also plots the target curve, and the path of the</span>
+<span class="sd">    object. The object is represented as a sphere. The orientations are represented</span>
+<span class="sd">    as frames with the x, y and z axis of the frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordinates : list or np.array</span>
+<span class="sd">        Mx3 array of coordinates of the vectors. Each row corresponds to x,y,z</span>
+<span class="sd">        respectively. The column entries are the respective coordinates.</span>
+<span class="sd">    field_values : list or np.array</span>
+<span class="sd">        Mx3 array of field values of the vectors. Each row corresponds to u,v,w</span>
+<span class="sd">        respectively, i.e. the velocity of the field in each direction.</span>
+<span class="sd">        The column entries are the respective values.</span>
+<span class="sd">    orientations : list or np.array</span>
+<span class="sd">        Mx3x3 array of orientations of the object. Each row corresponds to the</span>
+<span class="sd">        orientation of the object at that point. The &#39;column&#39; entries are the</span>
+<span class="sd">        respective 3x3 rotation matrices.</span>
+<span class="sd">    curve : np.array</span>
+<span class="sd">        Nx3 array of the curve points. Each row corresponds to x,y,z respectively.</span>
+<span class="sd">    num_arrows : int, optional</span>
+<span class="sd">        Number of vector field arrows (cones) to plot. The default is 10.</span>
+<span class="sd">    init_ball : int, optional</span>
+<span class="sd">        Initial ball index to plot. The default is 0.</span>
+<span class="sd">    final_ball : int, optional</span>
+<span class="sd">        Final ball index to plot. The default is None, which plots until the end.</span>
+<span class="sd">    num_balls : int, optional</span>
+<span class="sd">        Number of balls to plot. The default is 10.</span>
+<span class="sd">    add_lineplot : bool, optional</span>
+<span class="sd">        Whether to add a lineplot of the field coordinates. The default is False.</span>
+<span class="sd">        This is used to connect the vector field arrows.</span>
+<span class="sd">    colorscale : list, optional</span>
+<span class="sd">        List of colors to use in the plot. The default is None, which uses the</span>
+<span class="sd">        Plotly default colors. The list must have at least 6 colors, which are</span>
+<span class="sd">        used for the curve, previous path, current path, initial ball, final ball</span>
+<span class="sd">        and the object, respectively.</span>
+<span class="sd">    show_curve : bool, optional</span>
+<span class="sd">        Whether to show the target curve. The default is True.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional keyword arguments to pass to the go.Cone function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fig : plotly.graph_objects.Figure</span>
+<span class="sd">        Resulting plotly figure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">final_ball</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">final_ball</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">arrows_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_arrows</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">coord_field</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">arrows_idx</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">field_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">field_values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)[</span><span class="n">arrows_idx</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">ball_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">init_ball</span><span class="p">,</span> <span class="n">final_ball</span><span class="p">,</span> <span class="n">num_balls</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">coord_balls</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">ball_idx</span><span class="p">]</span>
+    <span class="n">ori_balls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">orientations</span><span class="p">)[</span><span class="n">ball_idx</span><span class="p">]</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="n">colorscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">colorscale</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">qualitative</span><span class="o">.</span><span class="n">Plotly</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="c1"># Curve</span>
+    <span class="k">if</span> <span class="n">show_curve</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">curve</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">curve</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">curve</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colorscale</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="c1"># Previous path</span>
+    <span class="k">if</span> <span class="n">init_ball</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">init_ball</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">init_ball</span><span class="p">],</span>
+                    <span class="n">z</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">init_ball</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">dash</span><span class="o">=</span><span class="s2">&quot;dash&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colorscale</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Current path</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+        <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_ball</span><span class="p">:</span><span class="n">final_ball</span><span class="p">],</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">init_ball</span><span class="p">:</span><span class="n">final_ball</span><span class="p">],</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">init_ball</span><span class="p">:</span><span class="n">final_ball</span><span class="p">],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">dash</span><span class="o">=</span><span class="s2">&quot;solid&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colorscale</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Vector field arrows</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+        <span class="n">go</span><span class="o">.</span><span class="n">Cone</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">coord_field</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">coord_field</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">coord_field</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">u</span><span class="o">=</span><span class="n">field_values</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">v</span><span class="o">=</span><span class="n">field_values</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">w</span><span class="o">=</span><span class="n">field_values</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">colorscale</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="n">colorscale</span><span class="p">[</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">colorscale</span><span class="p">[</span><span class="mi">5</span><span class="p">]]],</span>  <span class="c1"># Set the colorscale</span>
+            <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Orientation frames</span>
+    <span class="n">scale_frame</span> <span class="o">=</span> <span class="mf">0.05</span>
+    <span class="k">if</span> <span class="n">orientations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ori</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ori_balls</span><span class="p">):</span>
+            <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">coord_balls</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">ux</span><span class="p">,</span> <span class="n">uy</span><span class="p">,</span> <span class="n">uz</span> <span class="o">=</span> <span class="n">scale_frame</span> <span class="o">*</span> <span class="p">(</span><span class="n">ori</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span> <span class="o">=</span> <span class="n">scale_frame</span> <span class="o">*</span> <span class="p">(</span><span class="n">ori</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">wx</span><span class="p">,</span> <span class="n">wy</span><span class="p">,</span> <span class="n">wz</span> <span class="o">=</span> <span class="n">scale_frame</span> <span class="o">*</span> <span class="p">(</span><span class="n">ori</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">px</span><span class="p">,</span> <span class="n">px</span> <span class="o">+</span> <span class="n">ux</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">py</span><span class="p">,</span> <span class="n">py</span> <span class="o">+</span> <span class="n">uy</span><span class="p">],</span>
+                    <span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">pz</span><span class="p">,</span> <span class="n">pz</span> <span class="o">+</span> <span class="n">uz</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">px</span><span class="p">,</span> <span class="n">px</span> <span class="o">+</span> <span class="n">vx</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">py</span><span class="p">,</span> <span class="n">py</span> <span class="o">+</span> <span class="n">vy</span><span class="p">],</span>
+                    <span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">pz</span><span class="p">,</span> <span class="n">pz</span> <span class="o">+</span> <span class="n">vz</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;lime&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">px</span><span class="p">,</span> <span class="n">px</span> <span class="o">+</span> <span class="n">wx</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">py</span><span class="p">,</span> <span class="n">py</span> <span class="o">+</span> <span class="n">wy</span><span class="p">],</span>
+                    <span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">pz</span><span class="p">,</span> <span class="n">pz</span> <span class="o">+</span> <span class="n">wz</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Object</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coord_balls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">colorscale</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">coord_balls</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">colorscale</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;rgba(172, 99, 250, 0.6)&quot;</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                <span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">coord</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">add_lineplot</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_scatter3d</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">y</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">z</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:],</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="animate_distance">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.plotting.animate_distance">[docs]</a>
+<span class="k">def</span> <span class="nf">animate_distance</span><span class="p">(</span><span class="n">p_hist</span><span class="p">,</span> <span class="n">R_hist</span><span class="p">,</span> <span class="n">nearest_points</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an animation of the distance metric between the object and the target</span>
+<span class="sd">    curve.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p_hist : list</span>
+<span class="sd">        List of the object positions.</span>
+<span class="sd">    R_hist : list</span>
+<span class="sd">        List of the object orientations.</span>
+<span class="sd">    nearest_points : list</span>
+<span class="sd">        List of the nearest points on the curve.</span>
+<span class="sd">    dt : float</span>
+<span class="sd">        Time step.</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Total time.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fig : plotly.graph_objects.Figure</span>
+<span class="sd">        Resulting plotly figure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">near_p</span><span class="p">,</span> <span class="n">near_R</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">nearest_points</span><span class="p">)</span>
+    <span class="n">near_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">near_p</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p_hist</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">fro_norms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">rot</span><span class="p">,</span> <span class="n">rot_d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">R_hist</span><span class="p">,</span> <span class="n">near_R</span><span class="p">):</span>
+        <span class="n">fro_norms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="n">rot_d</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">rot</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dt</span><span class="p">),</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fro_norms</span><span class="p">)</span>
+                <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">near_p</span> <span class="o">-</span> <span class="n">coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;#636efa&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">],</span>
+        <span class="n">frames</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">[</span>
+                    <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">),</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fro_norms</span><span class="p">[:</span><span class="n">i</span><span class="p">])</span>
+                        <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">near_p</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[:</span><span class="n">i</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;#636efa&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fro_norms</span><span class="p">)</span>
+        <span class="p">],</span>
+        <span class="n">layout</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>
+            <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
+            <span class="n">xaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">],</span> <span class="n">autorange</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">),</span>
+            <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">autorange</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Value of metric &lt;i&gt;D&lt;/i&gt;&quot;</span>
+            <span class="p">),</span>
+            <span class="n">updatemenus</span><span class="o">=</span><span class="p">[</span>
+                <span class="nb">dict</span><span class="p">(</span>
+                    <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;buttons&quot;</span><span class="p">,</span>
+                    <span class="n">buttons</span><span class="o">=</span><span class="p">[</span>
+                        <span class="nb">dict</span><span class="p">(</span>
+                            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Play&quot;</span><span class="p">,</span>
+                            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;animate&quot;</span><span class="p">,</span>
+                            <span class="n">args</span><span class="o">=</span><span class="p">[</span>
+                                <span class="kc">None</span><span class="p">,</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;redraw&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                                    <span class="s2">&quot;fromcurrent&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                    <span class="s2">&quot;transition&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;easing&quot;</span><span class="p">:</span> <span class="s2">&quot;quadratic-in-out&quot;</span><span class="p">,</span>
+                                    <span class="p">},</span>
+                                <span class="p">},</span>
+                            <span class="p">],</span>
+                        <span class="p">),</span>
+                        <span class="nb">dict</span><span class="p">(</span>
+                            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pause&quot;</span><span class="p">,</span>
+                            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;animate&quot;</span><span class="p">,</span>
+                            <span class="n">args</span><span class="o">=</span><span class="p">[</span>
+                                <span class="p">[</span><span class="kc">None</span><span class="p">],</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;redraw&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;immediate&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;transition&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                                <span class="p">},</span>
+                            <span class="p">],</span>
+                        <span class="p">),</span>
+                    <span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">],</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Felipe Bartelt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
