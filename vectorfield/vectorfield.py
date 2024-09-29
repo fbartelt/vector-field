@@ -70,9 +70,9 @@ class VectorField:
         Returns the vector field value at the given position and time. If
         store_points is True, the nearest points of the curve are stored in the
         nearest_points attribute.
-    acceleration(position, velocity, time=0)
+    acceleration(position, orientation, v, w, time=0)
         Returns the acceleration of the vector field at the given position,
-        velocity and time.
+        orientation, linear velocity, angular velocity and time.
     """
 
     def __init__(
@@ -128,7 +128,7 @@ class VectorField:
     def distance_fun(p, R, pd, Rd, beta=1):
         r"""Computes the distance between the current point and the desired point
         and the current orientation and the desired orientation. The distance is
-        described by :math: `D=||p-p_d||^2 + \frac{1}{2}||I - Rd^TR||^2_F`
+        described by :math:`D=||p-p_d||^2 + \frac{1}{2}||I - R_d^TR||^2_F`
         """
         p = np.array(p).reshape(-1, 1)
         pd = np.array(pd).reshape(-1, 1)
@@ -247,7 +247,7 @@ class VectorField:
         orientation, linear velocity, angular velocity and time.
 
         It computes the nummerical approximation for the vector field time derivative
-        \dot{\psi} \approx (\psi[k + 1] - \psi[k])/dt
+        :math:`\dot{\psi} \approx (\psi[k + 1] - \psi[k])/\Delta t`
 
         Parameters
         ----------
