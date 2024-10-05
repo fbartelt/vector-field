@@ -2,12 +2,14 @@
 
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 
+float MAX_VAL = 0.0;
+
 float VectorField::EEdistance(const SpecialEuclideanGroup& state,
                               const Eigen::MatrixXd& p2) {
   // Compute the Euclidean distance between two points
   Eigen::MatrixXd p1 = state.matrix();
   float distance;
-  float alpha;
+  double alpha;
   if (p1.rows() == 4) {
     Eigen::MatrixXd H = p1.inverse() * p2;
     // Extract 3x3 rotation block from H
@@ -15,11 +17,11 @@ float VectorField::EEdistance(const SpecialEuclideanGroup& state,
     // Extract translation vector from H
     Eigen::Vector3d t = H.block<3, 1>(0, 3);
     // Compute cos theta from Q
-    float cos_theta = 0.5 * (Q.trace() - 1);
+    double cos_theta = 0.5 * (Q.trace() - 1);
     // Compute sin theta from Q
-    float sin_theta = 1/(2 * sqrt(2)) * (Q - Q.transpose().eval()).norm();
+    double sin_theta = 1/(2 * sqrt(2)) * (Q - Q.transpose().eval()).norm();
     // Compute theta with atan2
-    float theta = atan2(sin_theta, cos_theta);
+    double theta = atan2(sin_theta, cos_theta);
     // Compute alpha. If cos(theta) is almost 1, alpha is taken as the limit -1/12
     if (cos_theta > 0.99) {
       alpha = -1/12;
@@ -32,6 +34,28 @@ float VectorField::EEdistance(const SpecialEuclideanGroup& state,
     Eigen::Matrix3d M = alpha * (Q + Q.transpose().eval()) + (1 - 2*alpha) * Eigen::Matrix3d::Identity();
     // Compute the distance
     distance = sqrt(2*pow(theta, 2) + t.transpose().eval() * M * t);
+    
+    double val = abs(distance - (H.log()).norm());
+    if (val > MAX_VAL){
+      std::cout << "HH:" << H << std::endl;
+      std::cout << "distance: " << distance << std::endl;
+      std::cout << "diff.: " << val << std::endl;
+      MAX_VAL = val;
+      std::cout << "logdist: " << H.log().norm() << std::endl;
+    }
+
+    // Checks if the eigenvalues of M are positive
+    Eigen::EigenSolver<Eigen::Matrix3d> es(M);
+    Eigen::Vector3cd eigenvalues = es.eigenvalues();
+    for (int i = 0; i < 3; i++) {
+      if (eigenvalues(i).real() < 0) {
+        std::cout << "M: " << std::endl << M << std::endl;
+        std::cout << "eigenvalues: " << std::endl << eigenvalues << std::endl;
+        throw std::runtime_error("M has negative eigenvalues");
+      }
+    }
+    
+    // std::cout << "distance: " << MAX_VAL << std::endl;
     // If distance is nan, print every variable
     if (std::isnan(distance)) {
       // Debugging alpha that seems to be overflowing
@@ -121,7 +145,7 @@ float VectorField::kn(float distance, float gain) {
 
 float VectorField::kt(float distance, float gain) {
   // Compute the tangent gain
-  return (1 - std::tanh(gain * distance));
+  return (1 - 0.5*std::tanh(gain * distance));
 }
 
 Eigen::MatrixXd VectorField::delta_matrix(float delta, int n, int row, int col) {
@@ -152,13 +176,13 @@ int VectorField::divide_and_conquer(const SpecialEuclideanGroup& state, int curv
 }
 
 void VectorField::write_data(const Eigen::MatrixXd& nearest, const Eigen::VectorXd& tangent,
-                            const Eigen::VectorXd& normal) {
+                            const Eigen::VectorXd& normal, const float distance) {
   // Save the data of the iteration
-  iterationResults.push_back(std::make_tuple(nearest, tangent, normal));
+  iterationResults.push_back(std::make_tuple(nearest, tangent, normal, distance));
 }
 
 // Each use divide_and_conquer to obtain the same thing. (Inneficient).
-Eigen::VectorXd VectorField::eval(const SpecialEuclideanGroup& state, bool save_data) {
+Eigen::VectorXd VectorField::eval(const SpecialEuclideanGroup& state, bool save_data, float gain_n, float gain_t) {
   // Evaluate the vector field at the given state
   // Compute normal component
   int closest_index = divide_and_conquer(state, 0, curve.size() - 1);
@@ -169,11 +193,13 @@ Eigen::VectorXd VectorField::eval(const SpecialEuclideanGroup& state, bool save_
 
   for (int j = 0; j < state.matrix().rows(); j++) {
     // Compute the gradient of the distance function gradD, that is a row vector. Represented as a matrix
+    // Symmetric derivative is used.
     Eigen::MatrixXd gradD = Eigen::MatrixXd::Zero(1, state.matrix().rows());
     for (int i = 0; i < state.matrix().rows() - 1; i++) {
       Eigen::MatrixXd delta = delta_matrix(delta_, state.matrix().rows(), i, j);
-      float dDistance = EEdistance(state + delta, closest_point);
-      gradD(0, i) = (dDistance - min_distance) / (delta_);
+      float rDistance = EEdistance(state + delta, closest_point);
+      float lDistance = EEdistance(state - delta, closest_point);
+      gradD(0, i) = (rDistance - lDistance) / (2*delta_);
     }
     Eigen::MatrixXd aa = state.algebra_.SR(state.matrix().col(j), state.n());
     Eigen::MatrixXd aux = (gradD * aa);
@@ -197,9 +223,10 @@ Eigen::VectorXd VectorField::eval(const SpecialEuclideanGroup& state, bool save_
   Eigen::VectorXd tangent = state.algebra_.invSL(dHd * closest_point.inverse(), state.n());
   // Eigen::VectorXd tangent = tangent_component(state);
   // Eigen::VectorXd normal = normal_component(state);
+  tangent = kt(min_distance, gain_t) * tangent;
+  normal = - kn(min_distance, gain_n) * normal;
   if (save_data) {
-    write_data(closest_point, tangent, normal);
+    write_data(closest_point, tangent, normal, min_distance);
   }
-  float gain = 0.75;
-  return kt(min_distance, gain) * tangent - kn(min_distance, gain) * normal;
+  return tangent + normal;
 }

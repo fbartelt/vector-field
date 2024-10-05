@@ -34,9 +34,20 @@ class SpecialEuclideanGroup{
         : n_(other.n_), matrix_(other.matrix_), dim_(other.dim_), algebra_(other.algebra_) {}
 
     SpecialEuclideanGroup& operator=(const SpecialEuclideanGroup& other);
+    SpecialEuclideanGroup operator+(const SpecialEuclideanGroup& other) const;
+    SpecialEuclideanGroup operator-(const SpecialEuclideanGroup& other) const;
+    SpecialEuclideanGroup operator-() const;
+    SpecialEuclideanGroup operator*(const SpecialEuclideanGroup& other) const;
     SpecialEuclideanGroup operator+(const Eigen::MatrixXd& other) const;
-    // Friend function to overload the + operator for Eigen::MatrixXd + SpecialEuclideanGroup
+    SpecialEuclideanGroup operator-(const Eigen::MatrixXd& other) const;
+    SpecialEuclideanGroup operator*(const Eigen::MatrixXd& other) const;
+    SpecialEuclideanGroup operator*(const float scalar) const;
+    SpecialEuclideanGroup operator/(const float scalar) const;
     friend SpecialEuclideanGroup operator+(const Eigen::MatrixXd& mat, const SpecialEuclideanGroup& element);
+    friend SpecialEuclideanGroup operator-(const Eigen::MatrixXd& mat, const SpecialEuclideanGroup& element);
+    friend SpecialEuclideanGroup operator*(const Eigen::MatrixXd& mat, const SpecialEuclideanGroup& element);
+    friend SpecialEuclideanGroup operator*(const float scalar, const SpecialEuclideanGroup& element);
+    friend SpecialEuclideanGroup operator/(const float scalar, const SpecialEuclideanGroup& element);
 
     // Returns the dimension of the associated Lie algebra
     int dim() const {
