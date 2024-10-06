@@ -1,4 +1,5 @@
 #include "SpecialEuclideanGroup.h"
+#include "SpecialEuclideanAlgebra.h"
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 
 
@@ -10,7 +11,7 @@ Eigen::MatrixXd SpecialEuclideanGroup::random(int n) const {
     Eigen::VectorXd XI = Eigen::VectorXd::Random(dim);
 
     // Step 3: Compute SL(XI, n) using the associated Lie algebra's SL function
-    Eigen::MatrixXd SL_XI = algebra_.SL(XI, n);
+    SpecialEuclideanAlgebra SL_XI = algebra_.SL(XI, n);
 
     // Step 4: Compute and return the matrix exponential of SL(XI, n)
     Eigen::MatrixXd exp_SL_XI = SL_XI.exp(); // Matrix exponential

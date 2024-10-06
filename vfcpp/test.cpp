@@ -101,8 +101,8 @@ void test_SpecialEuclideanGroup() {
     cout << "xi = " << endl << xi << endl;
     Eigen::VectorXd hi = Eigen::VectorXd::LinSpaced(4, 11, 14);
     cout << "hi = " << endl << hi << endl;
-    Eigen::MatrixXd SL_XI = s1.SL(xi, 3);
-    cout << "SL(xi, 3) = " << endl << SL_XI << endl;
+    SpecialEuclideanAlgebra SL_XI = s1.SL(xi, 3);
+    SL_XI.print();
     Eigen::VectorXd inv_SL_XI = s1.invSL(SL_XI, 3);
     cout << "invSL(SL(xi, 3), 3) = " << endl << inv_SL_XI << endl;
     Eigen::MatrixXd SR_HI = s1.SR(hi, 3);
@@ -112,6 +112,9 @@ void test_SpecialEuclideanGroup() {
     Eigen::MatrixXd hdot2 = SR_HI * xi;
     cout << "SL(xi, 3) * hi = " << endl << hdot1 << endl;
     cout << "SR(hi, 3, 3) * xi = " << endl << hdot2 << endl;
+
+    Eigen::MatrixXd A = SL_XI.exp();
+    cout << "exp(SL(xi, 3)) = " << endl << A << endl;
 
 
     SpecialEuclideanGroup rand_se3 = SpecialEuclideanGroup(3);
@@ -191,8 +194,9 @@ void test_VectorField(){
         //     std::cout << "State matrix: " << std::endl << state.matrix() << std::endl;
         // }
         Eigen::VectorXd xi = vf.eval(state, true, gain_N, gain_T);
-        Eigen::MatrixXd liealg = state.algebra_.SL(xi, state.n());
+        SpecialEuclideanAlgebra liealg = state.algebra_.SL(xi, state.n());
         Eigen::MatrixXd next_mat = (liealg * dt).exp() * state.matrix();
+        // std::cout << "Debug matrix: " << std::endl << debug_mat << std::endl;
         state = SpecialEuclideanGroup(state.n(), next_mat);
         updated_states.push_back(state.matrix());
     }
@@ -204,7 +208,7 @@ void test_VectorField(){
 }
 
 int main() {
-    // test_SpecialEuclideanGroup();
+    test_SpecialEuclideanGroup();
     test_VectorField();
     return 0;
 }

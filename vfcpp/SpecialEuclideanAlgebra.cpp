@@ -1,5 +1,6 @@
 #include "SpecialEuclideanAlgebra.h"
 #include <eigen3/Eigen/Dense>
+#include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include <iostream>
 
 int SpecialEuclideanAlgebra::dim() const {
@@ -7,10 +8,10 @@ int SpecialEuclideanAlgebra::dim() const {
 }
 
 void SpecialEuclideanAlgebra::print() const {
-    std::cout << "This is the se(" << n_ << ") Lie algebra." << std::endl;
+    std::cout << "This is the se(" << n_ << ") Lie algebra:" << std::endl << matrix_ << std::endl;
 }
 
-Eigen::MatrixXd SpecialEuclideanAlgebra::SL(const Eigen::VectorXd& xi, int n) const {
+SpecialEuclideanAlgebra SpecialEuclideanAlgebra::SL(const Eigen::VectorXd& xi, int n) const {
     // Check if the dimension of xi matches the Lie algebra dimension
     if (xi.size() != dim_) {
         throw std::invalid_argument("xi has the wrong dimension.");
@@ -36,7 +37,7 @@ Eigen::MatrixXd SpecialEuclideanAlgebra::SL(const Eigen::VectorXd& xi, int n) co
         S_(i, n) = xi(i);
     }
 
-    return S_;
+    return SpecialEuclideanAlgebra(S_);
 }
 
 Eigen::VectorXd SpecialEuclideanAlgebra::invSL(const Eigen::MatrixXd& X, int n) const {
@@ -68,6 +69,10 @@ Eigen::VectorXd SpecialEuclideanAlgebra::invSL(const Eigen::MatrixXd& X, int n) 
     return xi;
 }
 
+Eigen::VectorXd SpecialEuclideanAlgebra::invSL(const SpecialEuclideanAlgebra& X, int n) const{
+    return invSL(X.matrix_, n);
+}
+
 Eigen::MatrixXd SpecialEuclideanAlgebra::SR(const Eigen::VectorXd& hi, int n) const {
     // Create an identity matrix of size dim x dim
     int dim = dim_;
@@ -82,10 +87,46 @@ Eigen::MatrixXd SpecialEuclideanAlgebra::SR(const Eigen::VectorXd& hi, int n) co
         Eigen::VectorXd e = I.col(i);
 
         // Apply SL(e, n) to get an nxn matrix
-        Eigen::MatrixXd SL_e = SL(e, n);
+        SpecialEuclideanAlgebra SL_e = SL(e, n);
         // Assign the result to the i-th column of S_
         S_.col(i) = SL_e * hi;
     }
 
     return S_;
+}
+
+Eigen::MatrixXd SpecialEuclideanAlgebra::exp() const {
+    // Performs simpler computation if SE(3)
+    if (n_ == 4) {
+        Eigen::Matrix3d S = matrix_.block<3, 3>(0, 0);
+        Eigen::Vector3d v = matrix_.block<3, 1>(0, 3);
+        float theta = sqrt(pow(S(1, 0), 2) + pow(S(0, 2), 2) + pow(S(2, 1), 2));
+        // If theta is close to zero, use the first order approximation
+        if (theta < 1e-6) {
+            Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+            Eigen::Matrix4d result = Eigen::Matrix4d::Identity();
+            result.block<3, 3>(0, 0) = R;
+            result.block<3, 1>(0, 3) = v;
+            return result;
+        }
+        else {
+            Eigen::Matrix3d R = Eigen::Matrix3d::Identity() + (sin(theta) / theta) * S + ((1 - cos(theta)) / pow(theta, 2)) * S * S;
+            Eigen::Matrix3d U = Eigen::Matrix3d::Identity() + ((1 - cos(theta)) / pow(theta, 2)) * S + ((theta - sin(theta)) / pow(theta, 3)) * S * S;
+            Eigen::Matrix4d result = Eigen::Matrix4d::Identity();
+            result.block<3, 3>(0, 0) = R;
+            result.block<3, 1>(0, 3) = U * v;
+            return result;
+        }
+    }
+    else {
+        return matrix_.exp();
+    }
+}
+
+SpecialEuclideanAlgebra SpecialEuclideanAlgebra::operator*(const float scalar) const {
+    return SpecialEuclideanAlgebra(matrix_ * scalar);
+}
+
+Eigen::VectorXd SpecialEuclideanAlgebra::operator*(const Eigen::VectorXd& v) const {
+    return matrix_ * v;
 }

@@ -35,6 +35,7 @@ float VectorField::EEdistance(const SpecialEuclideanGroup& state,
     // Compute the distance
     distance = sqrt(2*pow(theta, 2) + t.transpose().eval() * M * t);
     
+    // std::cout << "EE-dist H: " << H << std::endl;
     double val = abs(distance - (H.log()).norm());
     if (val > MAX_VAL){
       std::cout << "HH:" << H << std::endl;
