@@ -15,6 +15,12 @@ def vector_field_plot(
     add_lineplot=False,
     colorscale=None,
     show_curve=True,
+    ball_size=5,
+    curve_width=2,
+    path_width=5,
+    frame_scale=0.05,
+    curr_path_style="solid",
+    prev_path_style="dash",
     **kwargs
 ):
     """Plot a vector field in 3D. The vectors are represented as cones and the
@@ -56,6 +62,19 @@ def vector_field_plot(
         and the object, respectively.
     show_curve : bool, optional
         Whether to show the target curve. The default is True.
+    ball_size : int, optional
+        Size of the object balls. The default is 5.
+    curve_width : int, optional
+        Width of the curve line. The default is 2.
+    path_width : int, optional
+        Width of the path line. The default is 5.
+    frame_scale : float or list, optional
+        Scale factor for the orientation frames. The default is 0.05. If a list
+        is given, the scale factor is applied to each axis of the frame.
+    curr_path_style : str, optional
+        Style of the current path line. The default is "solid".
+    prev_path_style : str, optional
+        Style of the previous path line. The default is "dash".
     **kwargs
         Additional keyword arguments to pass to the go.Cone function.
 
@@ -66,6 +85,9 @@ def vector_field_plot(
     """
     if final_ball is None:
         final_ball = len(coordinates) - 1
+
+    if isinstance(frame_scale, (int, float)):
+        frame_scale = [frame_scale] * 3
 
     coordinates = np.array(coordinates).reshape(-1, 3)
     arrows_idx = np.round(np.linspace(0, len(coordinates) - 1, num_arrows)).astype(int)
@@ -92,7 +114,7 @@ def vector_field_plot(
                 y=curve[:, 1],
                 z=curve[:, 2],
                 mode="lines",
-                line=dict(width=2, color=colorscale[1]),
+                line=dict(width=curve_width, color=colorscale[1]),
             )
         )
     # Previous path
@@ -104,7 +126,7 @@ def vector_field_plot(
                     y=coordinates[1, 0:init_ball],
                     z=coordinates[2, 0:init_ball],
                     mode="lines",
-                    line=dict(width=5, dash="dash", color=colorscale[5]),
+                    line=dict(width=path_width, dash=prev_path_style, color=colorscale[5]),
                 )
             )
         )
@@ -116,7 +138,7 @@ def vector_field_plot(
             y=coordinates[1, init_ball:final_ball],
             z=coordinates[2, init_ball:final_ball],
             mode="lines",
-            line=dict(width=5, dash="solid", color=colorscale[0]),
+            line=dict(width=path_width, dash=curr_path_style, color=colorscale[0]),
         )
     )
 
@@ -136,13 +158,12 @@ def vector_field_plot(
     )
 
     # Orientation frames
-    scale_frame = 0.05
     if orientations is not None:
         for i, ori in enumerate(ori_balls):
             px, py, pz = coord_balls[i, :]
-            ux, uy, uz = scale_frame * (ori[:, 0])
-            vx, vy, vz = scale_frame * (ori[:, 1])
-            wx, wy, wz = scale_frame * (ori[:, 2])
+            ux, uy, uz =  ori[:, 0] / (np.linalg.norm(ori[:, 0] + 1e-6)) * frame_scale
+            vx, vy, vz =  ori[:, 1] / (np.linalg.norm(ori[:, 1] + 1e-6)) * frame_scale
+            wx, wy, wz =  ori[:, 2] / (np.linalg.norm(ori[:, 2] + 1e-6)) * frame_scale
             fig.add_trace(
                 go.Scatter3d(
                     x=[px, px + ux],
@@ -185,7 +206,7 @@ def vector_field_plot(
                 y=[coord[1]],
                 z=[coord[2]],
                 mode="markers",
-                marker=dict(size=15, color=color),
+                marker=dict(size=ball_size, color=color),
             )
         )
 
