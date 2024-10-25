@@ -19,6 +19,7 @@ def vector_field_plot(
     curve_width=2,
     path_width=5,
     frame_scale=0.05,
+    frame_width=2,
     curr_path_style="solid",
     prev_path_style="dash",
     **kwargs
@@ -71,6 +72,8 @@ def vector_field_plot(
     frame_scale : float or list, optional
         Scale factor for the orientation frames. The default is 0.05. If a list
         is given, the scale factor is applied to each axis of the frame.
+    frame_width : int, optional
+        Width of the orientation frame lines. The default is 2.
     curr_path_style : str, optional
         Style of the current path line. The default is "solid".
     prev_path_style : str, optional
@@ -170,7 +173,7 @@ def vector_field_plot(
                     y=[py, py + uy],
                     z=[pz, pz + uz],
                     mode="lines",
-                    line=dict(color="red"),
+                    line=dict(color="red", width=frame_width),
                 )
             )
             fig.add_trace(
@@ -179,7 +182,7 @@ def vector_field_plot(
                     y=[py, py + vy],
                     z=[pz, pz + vz],
                     mode="lines",
-                    line=dict(color="lime"),
+                    line=dict(color="lime", width=frame_width),
                 )
             )
             fig.add_trace(
@@ -188,7 +191,7 @@ def vector_field_plot(
                     y=[py, py + wy],
                     z=[pz, pz + wz],
                     mode="lines",
-                    line=dict(color="blue"),
+                    line=dict(color="blue", width=frame_width),
                 )
             )
 
