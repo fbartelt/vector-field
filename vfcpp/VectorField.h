@@ -3,6 +3,7 @@
 
 #include <eigen3/Eigen/Dense>
 #include "SpecialEuclideanGroup.h"
+#include <chrono>
 #include <tuple>
 
 class VectorField{
@@ -24,6 +25,9 @@ class VectorField{
     Eigen::VectorXd operator()(const SpecialEuclideanGroup& state) { return eval(state); };
     float ECdistance(const SpecialEuclideanGroup& state);
     float EEdistance(const SpecialEuclideanGroup& state, const Eigen::MatrixXd& p2);
+    Eigen::Matrix4d EEdistSE3_derivative(const SpecialEuclideanGroup& state, const Eigen::MatrixXd& p2, float distance);
+    Eigen::VectorXd lie_derivative(const SpecialEuclideanGroup& state, const Eigen::MatrixXd& closest_point, const float distance);
+    std::tuple<Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix3d, float, float, float, float> EEdistSE3_variables(const Eigen::MatrixXd& arg);
     std::vector<std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd, float>> iterationResults;
 };
 

@@ -224,7 +224,8 @@ fig = vector_field_plot(obj_positions, vfs, obj_frames, curve_positions,
                         num_arrows=0, init_ball=init_ball, final_ball=final_ball,
                         curr_path_style="solid", prev_path_style="dash",
                         sizemode="absolute", sizeref=6e-2, anchor="tail",
-                        ball_size=10, curve_width=5, path_width=10, frame_scale=frame_scale)
+                        ball_size=12, curve_width=5, path_width=10, frame_scale=frame_scale,
+                        frame_width=3)
 # cam = np.array([-2, -1.2, 1.3]) # first plot
 # center = dict(x=0, y=0.06, z=-0.175) # first plot
 # zoom = 1.95 # first plot
@@ -286,7 +287,7 @@ args = dict(
 )
 fig.update_layout(**args)
 
-fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+# fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
 fig.show()
 fig.write_image("/home/fbartelt/Documents/Artigos/figures/vf_automatica_3.pdf")
 # %%

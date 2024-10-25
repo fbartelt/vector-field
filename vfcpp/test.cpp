@@ -7,8 +7,27 @@
 // #include <vector>
 #include <fstream>
 #include <string>
+#include <chrono>
 
 using namespace std;
+
+// Function to calculate mean
+double calculateMean(const std::vector<double>& times) {
+    double sum = 0.0;
+    for (double time : times) {
+        sum += time;
+    }
+    return sum / times.size();
+}
+
+// Function to calculate standard deviation
+double calculateStdDev(const std::vector<double>& times, double mean) {
+    double sumSquaredDiffs = 0.0;
+    for (double time : times) {
+        sumSquaredDiffs += (time - mean) * (time - mean);
+    }
+    return std::sqrt(sumSquaredDiffs / times.size());
+}
 
 void writeToCSV(const std::vector<std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd, float>>& iterationResults, const std::string& filename) {
     std::ofstream csvFile;
@@ -152,11 +171,11 @@ std::vector<Eigen::MatrixXd> generate_curve(int n_points, float radius, float h=
 }
 
 void test_VectorField(){
-    std::vector<Eigen::MatrixXd> curve = generate_curve(1000, 1);
+    std::vector<Eigen::MatrixXd> curve = generate_curve(5000, 1);
     std::cout << "Curve first point: " << std::endl << curve[0] << std::endl;
     std::cout << "curve size: " << curve.size() << std::endl;
     std::cout << "ds: " << 1.0 / curve.size() << std::endl;
-    VectorField vf = VectorField(curve, 0.01);
+    VectorField vf = VectorField(curve, 0.001);
     // create a std::vector to store each 4x4matrix of the updated state
     std::vector<Eigen::MatrixXd> updated_states;
 
@@ -171,16 +190,16 @@ void test_VectorField(){
     std::cout << "H0: " << std::endl << H0 << std::endl;
     SpecialEuclideanGroup state0 = SpecialEuclideanGroup(3, H0);
     
-    float dist = vf.EEdistance(state0, curve[0]);
-    std::cout << "Euclidean distance between state0 and curve[0]: " << dist << std::endl;
-    float min_dist = vf.ECdistance(state0);
-    std::cout << "Minimum distance between state0 and curve: " << min_dist << std::endl;
-    Eigen::VectorXd psi = vf(state0);
-    std::cout << "Vector field at state0: " << std::endl << psi << std::endl;
+    // float dist = vf.EEdistance(state0, curve[0]);
+    // std::cout << "Euclidean distance between state0 and curve[0]: " << dist << std::endl;
+    // float min_dist = vf.ECdistance(state0);
+    // std::cout << "Minimum distance between state0 and curve: " << min_dist << std::endl;
+    // Eigen::VectorXd psi = vf(state0);
+    // std::cout << "Vector field at state0: " << std::endl << psi << std::endl;
 
     // Simulate system
     float dt = 0.01;
-    float T = 8;
+    float T = 15.0;
     float gain_N = 20.0;
     float gain_T = 1.0;
     int n_steps = T / dt;
@@ -188,7 +207,10 @@ void test_VectorField(){
     updated_states.push_back(state.matrix());
     std::cout << "Sanity check H0: " << std::endl << state.matrix() << std::endl;
     std::cout << "Simulating system for " << n_steps << " steps." << std::endl;
+    // Computes mean time for each iteration + standard deviation
+    std::vector<double> iterationTimes;
     for (int i = 0; i < n_steps; i++) {
+        auto start = std::chrono::high_resolution_clock::now();
         // if (i < 5){
         //     std::cout << "Iteration " << i << std::endl;
         //     std::cout << "State matrix: " << std::endl << state.matrix() << std::endl;
@@ -196,10 +218,26 @@ void test_VectorField(){
         Eigen::VectorXd xi = vf.eval(state, true, gain_N, gain_T);
         SpecialEuclideanAlgebra liealg = state.algebra_.SL(xi, state.n());
         Eigen::MatrixXd next_mat = (liealg * dt).exp() * state.matrix();
+        Eigen::MatrixXd debug_mat = (liealg * dt).exp();
+        // print determinants:
+        // std::cout << "Determinant of state: " << state.matrix().determinant() << std::endl;
+        Eigen::Matrix3d R_state = state.matrix().block<3, 3>(0, 0);
+        Eigen::Matrix3d R_debug = debug_mat.block<3, 3>(0, 0);
+        // Checks R*R^T
+        // std::cout << "R*R^T: " << std::endl << (R_state * R_state.transpose().eval() - Eigen::Matrix3d::Identity()).norm() << std::endl;
+        // std::cout << "R_debug*R_debug^T: " << std::endl << (R_debug * R_debug.transpose().eval() - Eigen::Matrix3d::Identity()).norm() << std::endl;
+
         // std::cout << "Debug matrix: " << std::endl << debug_mat << std::endl;
         state = SpecialEuclideanGroup(state.n(), next_mat);
+        auto end = std::chrono::high_resolution_clock::now();
         updated_states.push_back(state.matrix());
+        std::chrono::duration<double> duration = end - start;
+        iterationTimes.push_back(duration.count());
     }
+
+    double meanTime = calculateMean(iterationTimes);
+    double stdDev = calculateStdDev(iterationTimes, meanTime);
+    std::cout << "Mean iteration time (± standard deviation): " << meanTime << " ± " << stdDev << " s" << std::endl;
 
     // Save the iteration data to a CSV file
     writeToCSV(vf.iterationResults, "/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/vf_data.csv");
