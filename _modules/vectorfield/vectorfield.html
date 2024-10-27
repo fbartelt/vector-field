@@ -1,0 +1,398 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vectorfield.vectorfield &mdash; vector-field 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            vector-field
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">vectorfield</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">vector-field</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">vectorfield.vectorfield</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for vectorfield.vectorfield</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">logm</span><span class="p">,</span> <span class="n">expm</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">skew</span><span class="p">,</span> <span class="n">vee</span>
+
+<span class="n">_INVHALFPI</span> <span class="o">=</span> <span class="mf">0.63660</span>
+
+
+<div class="viewcode-block" id="VectorField">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.vectorfield.VectorField">[docs]</a>
+<span class="k">class</span> <span class="nc">VectorField</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vector Field class. Implementation of the vector field described in the</span>
+<span class="sd">    accepted paper:</span>
+
+<span class="sd">    Felipe B. A. Pessoa,  Luciano C. A. Pimenta, &quot;Vector Field Based Adaptive</span>
+<span class="sd">    Control for Collaborative Manipulation&quot; in: XXV Congresso Brasileiro de</span>
+<span class="sd">    Automática (CBA), 2024.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parametric_equation : function</span>
+<span class="sd">        A function that represents the parametric equation of the curve. It must</span>
+<span class="sd">        return a tuple whose first component is a NxM array of coordinates of</span>
+<span class="sd">        the curve, and the second component is a Nx3x3 tensor corresponding to</span>
+<span class="sd">        the N orientations frames. For the first component, each one of the n rows</span>
+<span class="sd">        should contain a m-dimensional float vector that is the n-th</span>
+<span class="sd">        m-dimensional sampled point of the curve.</span>
+<span class="sd">    time_dependent : bool, optional</span>
+<span class="sd">        Whether the curve (consequently the vector field) is time dependent or</span>
+<span class="sd">        not. The default is False.</span>
+<span class="sd">    beta: float, optional</span>
+<span class="sd">        A parameter that weights the contribution of rotation error in the</span>
+<span class="sd">        distance function. It also ensures dimensionality consistency. The</span>
+<span class="sd">        default is 1.</span>
+<span class="sd">    dt : float, optional</span>
+<span class="sd">        The time step, in seconds, used to compute the time derivative of the</span>
+<span class="sd">        vector field. The default is 1e-3.</span>
+<span class="sd">    ds : float, optional</span>
+<span class="sd">        The step size betweem samples of the curve. It is used to compute the</span>
+<span class="sd">        tangent vector components. The default is 1.</span>
+<span class="sd">    sense : int, optional</span>
+<span class="sd">        The sense of circulation of the curve. If 1, the curve is circulated in</span>
+<span class="sd">        anti-clockwise sense. If -1, the curve is circulated in clockwise sense.</span>
+<span class="sd">        The default is 1.</span>
+<span class="sd">    g_function : function, optional</span>
+<span class="sd">        A function that computes the function G of the vector field. The default</span>
+<span class="sd">        is None, which uses the default function used in the paper. The minimum</span>
+<span class="sd">        distance will be passed to the user-defined function as the first argument</span>
+<span class="sd">        &#39;min_dist&#39;, and the instance will be passe to the user-defined function</span>
+<span class="sd">        as a second argument &#39;instance&#39;.</span>
+<span class="sd">    h_function : function, optional</span>
+<span class="sd">        A function that computes the function H of the vector field. The default</span>
+<span class="sd">        is None, which uses the default function used in the paper. The minimum</span>
+<span class="sd">        distance will be passed to the user-defined function as the first argument</span>
+<span class="sd">        &#39;min_dist&#39;, and the instance will be passe to the user-defined function</span>
+<span class="sd">        as a second argument &#39;instance&#39;.</span>
+<span class="sd">    *args:</span>
+<span class="sd">        Additional positional arguments to be passed to the user-defined</span>
+<span class="sd">        functions or used to configure the default functions.</span>
+<span class="sd">    **kwargs:</span>
+<span class="sd">        Additional keyword arguments to be passed to the user-defined functions</span>
+<span class="sd">        or used to configure the default functions.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __call__(position, time=0)</span>
+<span class="sd">        Returns the vector field value at the given position and time. It is the</span>
+<span class="sd">        same as calling the psi method.</span>
+<span class="sd">    __repr__()</span>
+<span class="sd">        Returns the string representation of the vector field.</span>
+<span class="sd">    psi(position, time=0, store_points=True)</span>
+<span class="sd">        Returns the vector field value at the given position and time. If</span>
+<span class="sd">        store_points is True, the nearest points of the curve are stored in the</span>
+<span class="sd">        nearest_points attribute.</span>
+<span class="sd">    acceleration(position, orientation, v, w, time=0)</span>
+<span class="sd">        Returns the acceleration of the vector field at the given position,</span>
+<span class="sd">        orientation, linear velocity, angular velocity and time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parametric_equation</span><span class="p">,</span>
+        <span class="n">time_dependent</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">beta</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">dt</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">ds</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">sense</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">g_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">h_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parametric_equation</span> <span class="o">=</span> <span class="n">parametric_equation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_dependent</span> <span class="o">=</span> <span class="n">time_dependent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sense</span> <span class="o">=</span> <span class="n">sense</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_function</span><span class="p">(</span><span class="n">g_function</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_G</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_function</span><span class="p">(</span><span class="n">h_function</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_H</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearest_points</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">time_dependent</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Time dependent vector fields are not implemented&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="VectorField.__call__">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.vectorfield.VectorField.__call__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">psi</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">store_points</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VectorField.__repr__">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.vectorfield.VectorField.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Time-</span><span class="si">{</span><span class="p">(</span><span class="s1">&#39;In&#39;</span><span class="o">*</span><span class="p">(</span><span class="ow">not</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">time_dependent</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;variant&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> Vector Field.</span><span class="se">\n</span><span class="s2"> Alpha: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2"> Constant Velocity: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">const_vel</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2"> dt: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2"> Parametric Equation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parametric_equation</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_wrap_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">wrapped_function</span><span class="p">(</span><span class="n">min_dist</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">min_dist</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapped_function</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_default_G</span><span class="p">(</span><span class="n">min_dist</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">k_1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">k_1</span> <span class="o">*</span> <span class="n">_INVHALFPI</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">k_0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">min_dist</span><span class="p">))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_default_H</span><span class="p">(</span><span class="n">min_dist</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">k_2</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">fun_g</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_default_G</span><span class="p">(</span><span class="n">min_dist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">k_2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">fun_g</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<div class="viewcode-block" id="VectorField.distance_fun">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.vectorfield.VectorField.distance_fun">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">distance_fun</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">pd</span><span class="p">,</span> <span class="n">Rd</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the distance between the current point and the desired point</span>
+<span class="sd">        and the current orientation and the desired orientation. The distance is</span>
+<span class="sd">        described by :math:`D=||p-p_d||^2 + \frac{1}{2}||I - R_d^TR||^2_F`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">pd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pd</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">lin_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">pd</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">rot_dist</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Rd</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">R</span><span class="p">,</span> <span class="s2">&quot;fro&quot;</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">lin_dist</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">rot_dist</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_divide_conquer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve_segment</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+        <span class="n">curve_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">curve_segment</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">curve_frames</span> <span class="o">=</span> <span class="n">curve_segment</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">npoints</span> <span class="o">=</span> <span class="n">curve_segment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">npoints</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">distance_fun</span><span class="p">(</span>
+                    <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">curve_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">curve_frames</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span>
+                <span class="p">),</span>
+                <span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">mid_index</span> <span class="o">=</span> <span class="n">npoints</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">left_segment</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">curve_segment</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="n">mid_index</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="n">curve_segment</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="n">mid_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span>
+        <span class="p">)</span>
+        <span class="n">right_segment</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">curve_segment</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">mid_index</span><span class="p">:,</span> <span class="p">:],</span>
+            <span class="n">curve_segment</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">mid_index</span><span class="p">:,</span> <span class="p">:,</span> <span class="p">:],</span>
+        <span class="p">)</span>
+
+        <span class="n">left_dist</span><span class="p">,</span> <span class="n">left_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_divide_conquer</span><span class="p">(</span><span class="n">left_segment</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+        <span class="n">right_dist</span><span class="p">,</span> <span class="n">right_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_divide_conquer</span><span class="p">(</span><span class="n">right_segment</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">left_dist</span> <span class="o">&lt;</span> <span class="n">right_dist</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">left_dist</span><span class="p">,</span> <span class="n">left_index</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">right_dist</span><span class="p">,</span> <span class="n">right_index</span> <span class="o">+</span> <span class="n">mid_index</span>
+
+    <span class="k">def</span> <span class="nf">_add_nearest_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearest_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VectorField.psi">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.vectorfield.VectorField.psi">[docs]</a>
+    <span class="k">def</span> <span class="nf">psi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the vector field value at the given position and time. It is</span>
+<span class="sd">        the same as calling the __call__ method. If store_points is True, the</span>
+<span class="sd">        nearest points of the curve are stored in the nearest_points attribute.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        position : list or np.array</span>
+<span class="sd">            The position where the vector field will be computed.</span>
+<span class="sd">        orientation : np.array</span>
+<span class="sd">            The orientation at the given position, represented by a 3x3 rotation</span>
+<span class="sd">            matrix.</span>
+<span class="sd">        time : float, optional</span>
+<span class="sd">            The time at which the vector field will be computed. The default is 0.</span>
+<span class="sd">        store_points : bool, optional</span>
+<span class="sd">            Whether to store the nearest points of the curve. The default is True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">psi_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_psi_s</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="n">store_points</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">psi_s</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_psi_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">position</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parametric_equation</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vector_field_vel</span><span class="p">(</span>
+            <span class="n">p</span><span class="p">,</span>
+            <span class="n">orientation</span><span class="p">,</span>
+            <span class="n">curve</span><span class="p">,</span>
+            <span class="n">store_points</span><span class="o">=</span><span class="n">store_points</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_vector_field_vel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">vec_n</span><span class="p">,</span> <span class="n">vec_t</span><span class="p">,</span> <span class="n">min_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ntd</span><span class="p">(</span>
+            <span class="n">curve</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="n">store_points</span>
+        <span class="p">)</span>
+        <span class="n">fun_g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">(</span><span class="n">min_dist</span><span class="p">)</span>
+        <span class="n">fun_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">min_dist</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">fun_g</span> <span class="o">*</span> <span class="n">vec_n</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sense</span> <span class="o">*</span> <span class="n">fun_h</span> <span class="o">*</span> <span class="n">vec_t</span>
+
+    <span class="k">def</span> <span class="nf">_compute_ntd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">min_dist</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="n">ind_min</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">pr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># row vector to simplify computations</span>
+        <span class="n">min_dist</span><span class="p">,</span> <span class="n">ind_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_divide_conquer</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">pr</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+
+        <span class="n">vec_n_p</span> <span class="o">=</span> <span class="n">pr</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_min</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">Rd</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">ind_min</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">skew</span><span class="p">(</span><span class="n">Rd</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">@</span> <span class="n">R</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">skew</span><span class="p">(</span><span class="n">Rd</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">@</span> <span class="n">R</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">skew</span><span class="p">(</span><span class="n">Rd</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">@</span> <span class="n">R</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">vec_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">vec_n_p</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sigma</span><span class="p">))</span>
+
+        <span class="c1"># Handles closed curves (next index is the first point in the curve)</span>
+        <span class="k">if</span> <span class="n">ind_min</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">vec_t_p</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_min</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">vec_t_rot</span> <span class="o">=</span> <span class="n">vee</span><span class="p">(</span><span class="n">logm</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">Rd</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vec_t_p</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_min</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_min</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">vec_t_rot</span> <span class="o">=</span> <span class="n">vee</span><span class="p">(</span><span class="n">logm</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">ind_min</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">Rd</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="p">)</span>
+
+        <span class="n">vec_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">vec_t_p</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">vec_t_rot</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">store_points</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_nearest_point</span><span class="p">((</span><span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">ind_min</span><span class="p">,</span> <span class="p">:],</span> <span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">ind_min</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]))</span>
+
+        <span class="k">if</span> <span class="n">vec_n</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="n">vec_t</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in vec_n or vec_t: </span><span class="si">{</span><span class="n">vec_n</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">vec_t</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">vec_n</span><span class="p">,</span> <span class="n">vec_t</span><span class="p">,</span> <span class="n">min_dist</span>
+
+<div class="viewcode-block" id="VectorField.acceleration">
+<a class="viewcode-back" href="../../vectorfield.html#vectorfield.vectorfield.VectorField.acceleration">[docs]</a>
+    <span class="k">def</span> <span class="nf">acceleration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the acceleration of the vector field at the given position,</span>
+<span class="sd">        orientation, linear velocity, angular velocity and time.</span>
+
+<span class="sd">        It computes the nummerical approximation for the vector field time derivative</span>
+<span class="sd">        :math:`\dot{\psi} \approx (\psi[k + 1] - \psi[k])/\Delta t`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        position : list or np.array</span>
+<span class="sd">            The position where the acceleration will be computed.</span>
+<span class="sd">        orientation : np.array</span>
+<span class="sd">            The orientation at the given position, represented by a 3x3 rotation matrix.</span>
+<span class="sd">        v : list or np.array</span>
+<span class="sd">            The linear velocity at the given position.</span>
+<span class="sd">        w : list or np.array</span>
+<span class="sd">            The angular velocity at the given position.</span>
+<span class="sd">        time : float, optional</span>
+<span class="sd">            The time at which the acceleration will be computed. The default is 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">position</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">l_velocity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">a_velocity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Compute the numerical approximation of the time derivative</span>
+        <span class="n">current_vf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">psi</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">store_points</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">next_vf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">psi</span><span class="p">(</span>
+            <span class="n">position</span> <span class="o">+</span> <span class="n">l_velocity</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">expm</span><span class="p">(</span><span class="n">skew</span><span class="p">(</span><span class="n">a_velocity</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span> <span class="o">@</span> <span class="n">orientation</span><span class="p">,</span>
+            <span class="n">time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">store_points</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">dot_psi</span> <span class="o">=</span> <span class="p">(</span><span class="n">next_vf</span> <span class="o">-</span> <span class="n">current_vf</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+
+        <span class="k">return</span> <span class="n">dot_psi</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Felipe Bartelt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

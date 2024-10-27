@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,18 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>vectorfield package &mdash; vector-field 0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=d45e8c67"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -61,7 +60,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#vectorfield.utils.vee"><code class="docutils literal notranslate"><span class="pre">vee()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#vectorfield-vectorfield-module">vectorfield.vectorfield module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vectorfield.vectorfield">vectorfield.vectorfield module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vectorfield.vectorfield.VectorField"><code class="docutils literal notranslate"><span class="pre">VectorField</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-vectorfield">Module contents</a></li>
 </ul>
 </li>
@@ -127,7 +129,7 @@ curve.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vectorfield.plotting.vector_field_plot">
-<span class="sig-prename descclassname"><span class="pre">vectorfield.plotting.</span></span><span class="sig-name descname"><span class="pre">vector_field_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curve</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_ball</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_ball</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_balls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_lineplot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/plotting.html#vector_field_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.plotting.vector_field_plot" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">vectorfield.plotting.</span></span><span class="sig-name descname"><span class="pre">vector_field_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curve</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_ball</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_ball</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_balls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_lineplot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ball_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curve_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_path_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'solid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prev_path_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dash'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/plotting.html#vector_field_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.plotting.vector_field_plot" title="Link to this definition"></a></dt>
 <dd><p>Plot a vector field in 3D. The vectors are represented as cones and the
 auxiliary lineplot is used to represent arrow tails. The kwargs are passed
 to the go.Cone function. Also plots the target curve, and the path of the
@@ -156,6 +158,14 @@ Plotly default colors. The list must have at least 6 colors, which are
 used for the curve, previous path, current path, initial ball, final ball
 and the object, respectively.</p></li>
 <li><p><strong>show_curve</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to show the target curve. The default is True.</p></li>
+<li><p><strong>ball_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the object balls. The default is 5.</p></li>
+<li><p><strong>curve_width</strong> (<em>int</em><em>, </em><em>optional</em>) – Width of the curve line. The default is 2.</p></li>
+<li><p><strong>path_width</strong> (<em>int</em><em>, </em><em>optional</em>) – Width of the path line. The default is 5.</p></li>
+<li><p><strong>frame_scale</strong> (<em>float</em><em> or </em><em>list</em><em>, </em><em>optional</em>) – Scale factor for the orientation frames. The default is 0.05. If a list
+is given, the scale factor is applied to each axis of the frame.</p></li>
+<li><p><strong>frame_width</strong> (<em>int</em><em>, </em><em>optional</em>) – Width of the orientation frame lines. The default is 2.</p></li>
+<li><p><strong>curr_path_style</strong> (<em>str</em><em>, </em><em>optional</em>) – Style of the current path line. The default is “solid”.</p></li>
+<li><p><strong>prev_path_style</strong> (<em>str</em><em>, </em><em>optional</em>) – Style of the previous path line. The default is “dash”.</p></li>
 <li><p><strong>**kwargs</strong> – Additional keyword arguments to pass to the go.Cone function.</p></li>
 </ul>
 </dd>
@@ -205,8 +215,132 @@ compute the jacobian time derivative as jac_jac_geo &#64; qdot.</p>
 </dd></dl>
 
 </section>
-<section id="vectorfield-vectorfield-module">
-<h2>vectorfield.vectorfield module<a class="headerlink" href="#vectorfield-vectorfield-module" title="Link to this heading"></a></h2>
+<section id="module-vectorfield.vectorfield">
+<span id="vectorfield-vectorfield-module"></span><h2>vectorfield.vectorfield module<a class="headerlink" href="#module-vectorfield.vectorfield" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="vectorfield.vectorfield.VectorField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vectorfield.vectorfield.</span></span><span class="sig-name descname"><span class="pre">VectorField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parametric_equation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_dependent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sense</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.vectorfield.VectorField" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Vector Field class. Implementation of the vector field described in the
+accepted paper:</p>
+<p>Felipe B. A. Pessoa,  Luciano C. A. Pimenta, “Vector Field Based Adaptive
+Control for Collaborative Manipulation” in: XXV Congresso Brasileiro de
+Automática (CBA), 2024.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parametric_equation</strong> (<em>function</em>) – A function that represents the parametric equation of the curve. It must
+return a tuple whose first component is a NxM array of coordinates of
+the curve, and the second component is a Nx3x3 tensor corresponding to
+the N orientations frames. For the first component, each one of the n rows
+should contain a m-dimensional float vector that is the n-th
+m-dimensional sampled point of the curve.</p></li>
+<li><p><strong>time_dependent</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the curve (consequently the vector field) is time dependent or
+not. The default is False.</p></li>
+<li><p><strong>beta</strong> (<em>float</em><em>, </em><em>optional</em>) – A parameter that weights the contribution of rotation error in the
+distance function. It also ensures dimensionality consistency. The
+default is 1.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>optional</em>) – The time step, in seconds, used to compute the time derivative of the
+vector field. The default is 1e-3.</p></li>
+<li><p><strong>ds</strong> (<em>float</em><em>, </em><em>optional</em>) – The step size betweem samples of the curve. It is used to compute the
+tangent vector components. The default is 1.</p></li>
+<li><p><strong>sense</strong> (<em>int</em><em>, </em><em>optional</em>) – The sense of circulation of the curve. If 1, the curve is circulated in
+anti-clockwise sense. If -1, the curve is circulated in clockwise sense.
+The default is 1.</p></li>
+<li><p><strong>g_function</strong> (<em>function</em><em>, </em><em>optional</em>) – A function that computes the function G of the vector field. The default
+is None, which uses the default function used in the paper. The minimum
+distance will be passed to the user-defined function as the first argument
+‘min_dist’, and the instance will be passe to the user-defined function
+as a second argument ‘instance’.</p></li>
+<li><p><strong>h_function</strong> (<em>function</em><em>, </em><em>optional</em>) – A function that computes the function H of the vector field. The default
+is None, which uses the default function used in the paper. The minimum
+distance will be passed to the user-defined function as the first argument
+‘min_dist’, and the instance will be passe to the user-defined function
+as a second argument ‘instance’.</p></li>
+<li><p><strong>*args</strong> – Additional positional arguments to be passed to the user-defined
+functions or used to configure the default functions.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments to be passed to the user-defined functions
+or used to configure the default functions.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="vectorfield.vectorfield.VectorField.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.vectorfield.VectorField.__call__" title="Link to this definition"></a></dt>
+<dd><p>Returns the vector field value at the given position and time. It is the
+same as calling the psi method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="vectorfield.vectorfield.VectorField.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.vectorfield.VectorField.__repr__" title="Link to this definition"></a></dt>
+<dd><p>Returns the string representation of the vector field.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="vectorfield.vectorfield.VectorField.psi">
+<span class="sig-name descname"><span class="pre">psi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.psi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.vectorfield.VectorField.psi" title="Link to this definition"></a></dt>
+<dd><p>Returns the vector field value at the given position and time. If
+store_points is True, the nearest points of the curve are stored in the
+nearest_points attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="vectorfield.vectorfield.VectorField.acceleration">
+<span class="sig-name descname"><span class="pre">acceleration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.acceleration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.vectorfield.VectorField.acceleration" title="Link to this definition"></a></dt>
+<dd><p>Returns the acceleration of the vector field at the given position,
+orientation, linear velocity, angular velocity and time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">acceleration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.acceleration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Returns the acceleration of the vector field at the given position,
+orientation, linear velocity, angular velocity and time.</p>
+<p>It computes the nummerical approximation for the vector field time derivative
+<span class="math notranslate nohighlight">\(\dot{\psi} \approx (\psi[k + 1] - \psi[k])/\Delta t\)</span></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> (<em>list</em><em> or </em><em>np.array</em>) – The position where the acceleration will be computed.</p></li>
+<li><p><strong>orientation</strong> (<em>np.array</em>) – The orientation at the given position, represented by a 3x3 rotation matrix.</p></li>
+<li><p><strong>v</strong> (<em>list</em><em> or </em><em>np.array</em>) – The linear velocity at the given position.</p></li>
+<li><p><strong>w</strong> (<em>list</em><em> or </em><em>np.array</em>) – The angular velocity at the given position.</p></li>
+<li><p><strong>time</strong> (<em>float</em><em>, </em><em>optional</em>) – The time at which the acceleration will be computed. The default is 0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="vectorfield.vectorfield.VectorField.distance_fun">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">distance_fun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.distance_fun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vectorfield.vectorfield.VectorField.distance_fun" title="Link to this definition"></a></dt>
+<dd><p>Computes the distance between the current point and the desired point
+and the current orientation and the desired orientation. The distance is
+described by <span class="math notranslate nohighlight">\(D=||p-p_d||^2 + \frac{1}{2}||I - R_d^TR||^2_F\)</span></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">psi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vectorfield/vectorfield.html#VectorField.psi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Computes the vector field value at the given position and time. It is
+the same as calling the __call__ method. If store_points is True, the
+nearest points of the curve are stored in the nearest_points attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> (<em>list</em><em> or </em><em>np.array</em>) – The position where the vector field will be computed.</p></li>
+<li><p><strong>orientation</strong> (<em>np.array</em>) – The orientation at the given position, represented by a 3x3 rotation
+matrix.</p></li>
+<li><p><strong>time</strong> (<em>float</em><em>, </em><em>optional</em>) – The time at which the vector field will be computed. The default is 0.</p></li>
+<li><p><strong>store_points</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to store the nearest points of the curve. The default is True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="module-vectorfield">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-vectorfield" title="Link to this heading"></a></h2>
