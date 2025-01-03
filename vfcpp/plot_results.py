@@ -178,10 +178,10 @@ fig.show()
 # %%
 """ PLOT VECTOR FIELD
  ---- HOW TO GET CURRENT CAMERA CONFIGURATION
-    f = go.FigureWidget(fig)
-    f
-    print(f.get_state()['_layout']['scene']['camera']['eye'])
-    print(f.get_state()['_layout']['scene']['camera']['center'])
+f = go.FigureWidget(fig)
+f
+print(f.get_state()['_layout']['scene']['camera']['eye'])
+print(f.get_state()['_layout']['scene']['camera']['center'])
 """
 import sys
 import plotly.express as px
@@ -305,11 +305,11 @@ for htm in curve:
 
 curve_pos = np.array(curve_pos).T
 curve_ori = np.array(curve_ori).reshape(-1, 3, 3)
-fig = go.Figure(go.Scatter3d(x=curve_pos[0, :], y=curve_pos[1, :], z=curve_pos[2, :], mode='markers', marker=dict(size=4, color=colorscale[9]), showlegend=False,))
+fig = go.Figure(go.Scatter3d(x=curve_pos[0, :], y=curve_pos[1, :], z=curve_pos[2, :], mode='markers', marker=dict(size=4), showlegend=False,))
 
-scale_frame = 0.1
+scale_frame = 0.15
 for i, ori in enumerate(curve_ori):
-    if i % 70 == 0:
+    if i % 50 == 0:
         px, py, pz = curve_pos[:, i]
         ux, uy, uz = scale_frame * (ori[:, 0]) #/ (np.linalg.norm(ori[:, 0]) + 1e-6)
         vx, vy, vz = scale_frame * (ori[:, 1]) #/ (np.linalg.norm(ori[:, 1]) + 1e-6)
@@ -345,14 +345,64 @@ for i, ori in enumerate(curve_ori):
             )
         )
 
-fig.update_layout(scene=dict(aspectmode='data'), margin=dict(l=0, r=0, b=0, t=0), width=1200, height=800)
 fig.update_layout(scene=dict(xaxis=dict(showticklabels=False, nticks=2), yaxis=dict(showticklabels=False, nticks=2), zaxis=dict(showticklabels=False, nticks=2)))
 # Changes camera position to a better view (less blank space around the plot)
-fig.update_layout(scene_camera=dict(eye=dict(x=1.3, y=1.3, z=1.3), center=dict(x=0, y=0, z=-0.3), up=dict(x=0, y=0, z=1)), )
+camera = dict(eye=dict(x=1.3, y=1.3, z=1.3), center=dict(x=0, y=0, z=-0.3), up=dict(x=0, y=0, z=1))
+xticks = [-1.5, 1.5]
+yticks = [-1.5, 1.5]
+zticks = [0, 1.5]
+args = dict(
+    margin=dict(t=0, b=0, r=0, l=0, pad=0),
+    scene_camera=camera,
+    showlegend=False,
+    # scene_aspectmode="cube",
+    scene_yaxis=dict(
+        nticks=2,
+        range=yticks,
+        ticks="outside",
+        tickvals=yticks,
+        ticktext=yticks,
+        showticklabels=False,
+        title="",
+        gridcolor="black",
+        zerolinecolor="black",
+        backgroundcolor="rgba(0, 0, 0, 0)",
+    ),
+    scene_zaxis=dict(
+        nticks=2,
+        range=zticks,
+        ticks="outside",
+        tickvals=zticks,
+        ticktext=zticks,
+        showticklabels=False,
+        title="",
+        gridcolor="black",
+        zerolinecolor="black",
+        backgroundcolor="rgba(0, 0, 0, 0)",
+    ),
+    scene_xaxis=dict(
+        nticks=2,
+        range=xticks,
+        tickvals=xticks,
+        showticklabels=False,
+        title="",
+        gridcolor="black",
+        zerolinecolor="black",
+        backgroundcolor="rgba(0, 0, 0, 0)",
+    ),
+    width=718.110, 
+    height=403.937,
+    paper_bgcolor='rgba(0,0,0,0)'
+)
+fig.update_layout(**args)
+# fig.update_layout(scene=dict(aspectmode='data'), margin=dict(l=0, r=0, b=0, t=0),
+#                    width=718.110, height=403.937)
 # Add zoom to the plot
 # fig.update_layout(scene_camera=dict(up=dict(x=0, y=0, z=1), center=dict(x=0, y=0, z=0), eye=dict(x=0.5, y=0.5, z=0.5)))
-# fig.show()
+fig.show()
 # save figure as pdf file
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/cba/curve_with_frames.pdf")
-
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/cba/curve_with_frames.pdf")
+# fig.write_image("/home/fbartelt/Documents/Projetos/dissertation/figures/curve_with_frames.svg")
+# import plotly.io as pio
+# pio.write_image(fig, '/home/fbartelt/Documents/Projetos/dissertation/figures/curve_with_frames.svg',scale=2, width=718.110, height=403.937)
 # %%
