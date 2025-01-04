@@ -1,7 +1,6 @@
-#ifndef VECTORFIELD_H
-#define VECTORFIELD_H
+#ifndef VECTORFIELD_HPP
+#define VECTORFIELD_HPP
 
-#include <chrono>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include <tuple>
@@ -147,25 +146,11 @@ class VectorField {
     }
     return tangent + normal;
   }
-  // Eigen::Matrix4d EEdistSE3_derivative(const Group& state,
-  //                                      const Eigen::MatrixXd& p2,
-  //                                      float distance);
-  // Eigen::VectorXd lie_derivative(const Group& state,
-  //                                const Eigen::MatrixXd& closest_point,
-  //                                const float distance);
-  // std::tuple<Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix3d, float, float,
-  //            float, float>
-  // EEdistSE3_variables(const Eigen::MatrixXd& arg);
-};
 
-template <>
-class VectorField<SpecialEuclideanGroup>
-    : public VectorField<SpecialEuclideanGroup> {
- public:
   std::tuple<Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix3d, float, float,
              float, float>
-  VectorField::EEdistSE3Variables(const Eigen::MatrixXd& X) {
-    // Compute the variables used in the explicit EEdistance function
+  EEdistSE3Variables(const Eigen::MatrixXd& X) {
+    // Compute the variables used in the explicit EEdistance function in SE(3)
     Eigen::MatrixXd Z = X;
     Eigen::Matrix3d Q = Z.block<3, 3>(0, 0);
     Eigen::Vector3d t = Z.block<3, 1>(0, 3);
@@ -186,23 +171,95 @@ class VectorField<SpecialEuclideanGroup>
                         (1 - 2 * alpha) * Eigen::Matrix3d::Identity();
     return std::make_tuple(Q, t, M, theta, cos_theta, sin_theta, alpha);
   }
-  float EEdistance(const SpecialEuclideanGroup& state,
-                   const Eigen::MatrixXd& W) {
-    Eigen::MatrixXd Z = state.matrix().inverse() * W;
-    auto [Q, t, M, theta, cos_theta, sin_theta, alpha] = EEdistSE3Variables(Z);
+  // Eigen::Matrix4d EEdistSE3_derivative(const Group& state,
+  //                                      const Eigen::MatrixXd& p2,
+  //                                      float distance);
+  // Eigen::VectorXd lie_derivative(const Group& state,
+  //                                const Eigen::MatrixXd& closest_point,
+  //                                const float distance);
+  // std::tuple<Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix3d, float, float,
+  //            float, float>
+  // EEdistSE3_variables(const Eigen::MatrixXd& arg);
+};
 
-    float distance = sqrt(2 * pow(theta, 2) + t.transpose() * M * t);
-    return distance;
-  }
+template <>
+inline float VectorField<SpecialEuclideanGroup>::EEdistance(
+    const SpecialEuclideanGroup& state, const Eigen::MatrixXd& W) {
+  Eigen::MatrixXd Z = state.matrix().inverse() * W;
+  auto [Q, t, M, theta, cos_theta, sin_theta, alpha] = EEdistSE3Variables(Z);
 
-  Eigen::VectorXd normalComponent(const SpecialEuclideanGroup& state,
-                                  float min_dist, int min_index) {
-    // TODO
-  }
-  Eigen::VectorXd normalComponent(const SpecialEuclideanGroup& state) {
-    auto [min_dist, min_index] = ECdistance(state);
-    return normalComponent(state, min_dist, min_index);
-  }
+  float distance = sqrt(2 * pow(theta, 2) + t.transpose() * M * t);
+  return distance;
 }
+
+template <>
+inline Eigen::VectorXd VectorField<SpecialEuclideanGroup>::normalComponent(
+    const SpecialEuclideanGroup& state, float min_dist, int min_index) {
+  // TODO
+  // Throw an error of NOT IMPLEMEMENTED
+  throw std::logic_error("FUNCTION NOT IMPLEMENTED");
+  Eigen::VectorXd normal_component =
+      Eigen::VectorXd::Zero(state.matrix().rows());
+  return normal_component;
+}
+
+template <>
+inline Eigen::VectorXd VectorField<SpecialEuclideanGroup>::normalComponent(
+    const SpecialEuclideanGroup& state) {
+  auto [min_dist, min_index] = ECdistance(state);
+  Eigen::VectorXd normal_component =
+      normalComponent(state, min_dist, min_index);
+  return normal_component;
+}
+
+// template <>
+// class VectorField<SpecialEuclideanGroup>
+//     : public VectorField<SpecialEuclideanGroup> {
+//  public:
+//  using VectorField<SpecialEuclideanGroup>::ECdistance;
+//   std::tuple<Eigen::Matrix3d, Eigen::Vector3d, Eigen::Matrix3d, float, float,
+//              float, float>
+//   VectorField::EEdistSE3Variables(const Eigen::MatrixXd& X) {
+//     // Compute the variables used in the explicit EEdistance function
+//     Eigen::MatrixXd Z = X;
+//     Eigen::Matrix3d Q = Z.block<3, 3>(0, 0);
+//     Eigen::Vector3d t = Z.block<3, 1>(0, 3);
+//     float cos_theta = 0.5 * (Q.trace() - 1);
+//     float sin_theta = 1 / (2 * sqrt(2)) * (Q - Q.inverse()).norm();
+//     float theta = atan2(sin_theta, cos_theta);
+//     cos_theta = cos(theta);
+//     sin_theta = sin(theta);
+
+//     float alpha;
+//     if (cos_theta > c_maxCosTheta) {
+//       alpha = -1 / 12;
+//     } else {
+//       alpha =
+//           (2.0 - 2 * cos_theta - pow(theta, 2)) / (4 * pow((1 - cos_theta),
+//           2));
+//     }
+//     Eigen::Matrix3d M = alpha * (Q + Q.inverse()) +
+//                         (1 - 2 * alpha) * Eigen::Matrix3d::Identity();
+//     return std::make_tuple(Q, t, M, theta, cos_theta, sin_theta, alpha);
+//   }
+//   float EEdistance(const SpecialEuclideanGroup& state,
+//                    const Eigen::MatrixXd& W) {
+//     Eigen::MatrixXd Z = state.matrix().inverse() * W;
+//     auto [Q, t, M, theta, cos_theta, sin_theta, alpha] =
+//     EEdistSE3Variables(Z);
+
+//     float distance = sqrt(2 * pow(theta, 2) + t.transpose() * M * t);
+//     return distance;
+//   }
+
+//   Eigen::VectorXd normalComponent(const SpecialEuclideanGroup& state,
+//                                   float min_dist, int min_index) {
+//     // TODO
+//   }
+//   Eigen::VectorXd normalComponent(const SpecialEuclideanGroup& state) {
+//     auto [min_dist, min_index] = this->ECdistance(state);
+//     return normalComponent(state, min_dist, min_index);
+//   }
+// }
 
 #endif  // VECTORFIELD_HPP
