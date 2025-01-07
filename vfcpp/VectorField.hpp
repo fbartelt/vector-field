@@ -183,8 +183,9 @@ class VectorField {
 };
 
 template <>
-inline float VectorField<SpecialEuclideanGroup>::EEdistance(
-    const SpecialEuclideanGroup& state, const Eigen::MatrixXd& W) {
+inline float VectorField<SE3>::EEdistance(
+    const SE3& state, const Eigen::MatrixXd& W) {
+  std::cout << "EEdistance SPECIALIZED" << std::endl;
   Eigen::MatrixXd Z = state.matrix().inverse() * W;
   auto [Q, t, M, theta, cos_theta, sin_theta, alpha] = EEdistSE3Variables(Z);
 
@@ -193,8 +194,8 @@ inline float VectorField<SpecialEuclideanGroup>::EEdistance(
 }
 
 template <>
-inline Eigen::VectorXd VectorField<SpecialEuclideanGroup>::normalComponent(
-    const SpecialEuclideanGroup& state, float min_dist, int min_index) {
+inline Eigen::VectorXd VectorField<SE3>::normalComponent(
+    const SE3& state, float min_dist, int min_index) {
   // TODO
   // Throw an error of NOT IMPLEMEMENTED
   throw std::logic_error("FUNCTION NOT IMPLEMENTED");
@@ -204,8 +205,8 @@ inline Eigen::VectorXd VectorField<SpecialEuclideanGroup>::normalComponent(
 }
 
 template <>
-inline Eigen::VectorXd VectorField<SpecialEuclideanGroup>::normalComponent(
-    const SpecialEuclideanGroup& state) {
+inline Eigen::VectorXd VectorField<SE3>::normalComponent(
+    const SE3& state) {
   auto [min_dist, min_index] = ECdistance(state);
   Eigen::VectorXd normal_component =
       normalComponent(state, min_dist, min_index);
