@@ -5,7 +5,7 @@
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include <tuple>
 
-#include "SpecialEuclideanGroup.h"
+#include "SpecialEuclideanGroup.hpp"
 
 // Global constants for the default delta and ds values
 float c_delta = 0.001;
@@ -21,12 +21,12 @@ class VectorField {
   float ds_;
   float delta_;
 
-  Eigen::VectorXd tangentComponent(float min_dist, int min_index) {
+  Eigen::VectorXd tangentComponent(const Group& state, float min_dist, int min_index) {
     Eigen::MatrixXd closest_point = curve.at(min_index);
 
     Eigen::MatrixXd dHd;
     if (curve_derivative.size() > 0) {
-      dhd = curve_derivative.at(min_index);
+      dHd = curve_derivative.at(min_index);
     } else {
       if (min_index == curve.size() - 1) {
         // If the closest point is the last point on the curve, the next point
@@ -43,7 +43,7 @@ class VectorField {
   }
 
   Eigen::VectorXd tangentComponent(const Group& state) {
-    std::tuple<float, int>[min_distance, closest_index] = ECdistance(state);
+    auto [min_distance, closest_index] = ECdistance(state);
     return tangentComponent(min_distance, closest_index);
   }
 
@@ -62,7 +62,7 @@ class VectorField {
       Eigen::MatrixXd variation =
           (state.algebra().S(I.col(i)) * delta_).exp() * state;
       float dDistance = EEdistance(variation, closest_point);
-      LvDhat(i) = (dDistance - min_distance) / (delta_);
+      LvDhat(i) = (dDistance - min_dist) / (delta_);
     }
     normal = -LvDhat;
     // normal += (gradD * state.algebra_.SR(state.matrix().col(i),
@@ -71,7 +71,7 @@ class VectorField {
   }
 
   Eigen::VectorXd normalComponent(const Group& state) {
-    std::tuple<float, int>[min_distance, closest_index] = ECdistance(state);
+    auto [min_distance, closest_index] = ECdistance(state);
     return normalComponent(state, min_distance, closest_index);
   }
 
@@ -137,7 +137,7 @@ class VectorField {
 
     Eigen::VectorXd normal =
         normalComponent(state, min_distance, closest_index);
-    Eigen::VectorXd tangent = tangentComponent(min_distance, closest_index);
+    Eigen::VectorXd tangent = tangentComponent(state, min_distance, closest_index);
 
     tangent = kt(min_distance, gain_t1, gain_t2, gain_t3) * tangent;
     normal = kn(min_distance, gain_n1, gain_n2) * normal;

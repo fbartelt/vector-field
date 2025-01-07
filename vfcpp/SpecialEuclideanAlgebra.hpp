@@ -1,5 +1,4 @@
-#ifndef SPECIAL_EUCLIDEAN_ALGEBRA_HPP
-#define SPECIAL_EUCLIDEAN_ALGEBRA_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 
@@ -119,6 +118,7 @@ class se3 : public GeneralLinearAlgebraBase<se3> {
     dim_ = 6;
     signature_ = "(3)";
     name_ = "se";
+    matrix_ = matrix;
   }
 
   se3(const SpecialEuclideanAlgebra& A) : GeneralLinearAlgebraBase<se3>(4) {
@@ -136,17 +136,17 @@ class se3 : public GeneralLinearAlgebraBase<se3> {
     matrix_ = mat;
   }
 
-  se3 S(const Eigen::VectorXd& xi) const override {}
+  se3 S(const Eigen::VectorXd& xi) const override;
 
-  Eigen::VectorXd invS(const Eigen::MatrixXd& A) const override {}
+  Eigen::VectorXd invS(const Eigen::MatrixXd& A) const override;
 
-  Eigen::VectorXd invS(const se3& A) const { return se3::invS(A); }
+  Eigen::VectorXd invS(const se3& A) const { return invS(A.matrix_); }
   Eigen::VectorXd invS(const SpecialEuclideanAlgebra& A) const {
     se3 B = se3(A);
     return se3::invS(B);
   }
 
-  Eigen::MatrixXd exp() const override {}
+  Eigen::MatrixXd exp() const override;
 };
 
 se3 se3::S(const Eigen::VectorXd& xi) const {
@@ -215,5 +215,3 @@ Eigen::MatrixXd se3::exp() const {
 }
 
 using seN = SpecialEuclideanAlgebra;
-
-#endif  // SPECIAL_EUCLIDEAN_ALGEBRA_HPP
