@@ -109,6 +109,8 @@ class VectorField {
 
   Eigen::VectorXd operator()(const Group& state) { return eval(state); };
 
+  int kronDelta(int i, int j) { return (i == j) ? 1 : 0; }
+
   float EEdistance(const Group& state, const Eigen::MatrixXd& W) {
     Eigen::MatrixXd V = state.matrix();
     return ((V.inverse() * W).log()).norm();
@@ -171,6 +173,15 @@ class VectorField {
                         (1 - 2 * alpha) * Eigen::Matrix3d::Identity();
     return std::make_tuple(Q, t, M, theta, cos_theta, sin_theta, alpha);
   }
+
+  Eigen::Matrix3d Shat(const Eigen::VectorXd& omega){
+    Eigen::Matrix3d A = Eigen::Matrix3d::Zero();
+    A(0, 1) = -omega(2);
+    A(0, 2) = omega(1);
+    A(1, 2) = -omega(0);
+    A = A - A.transpose().eval();
+    return A;
+  }
   // Eigen::Matrix4d EEdistSE3_derivative(const Group& state,
   //                                      const Eigen::MatrixXd& p2,
   //                                      float distance);
@@ -185,7 +196,6 @@ class VectorField {
 template <>
 inline float VectorField<SE3>::EEdistance(
     const SE3& state, const Eigen::MatrixXd& W) {
-  std::cout << "EEdistance SPECIALIZED" << std::endl;
   Eigen::MatrixXd Z = state.matrix().inverse() * W;
   auto [Q, t, M, theta, cos_theta, sin_theta, alpha] = EEdistSE3Variables(Z);
 
@@ -197,10 +207,175 @@ template <>
 inline Eigen::VectorXd VectorField<SE3>::normalComponent(
     const SE3& state, float min_dist, int min_index) {
   // TODO
+  // std::cout << "nromal comp" << std::endl;
   // Throw an error of NOT IMPLEMEMENTED
-  throw std::logic_error("FUNCTION NOT IMPLEMENTED");
-  Eigen::VectorXd normal_component =
-      Eigen::VectorXd::Zero(state.matrix().rows());
+  Eigen::MatrixXd W = curve.at(min_index);
+  Eigen::MatrixXd Z = W.matrix().inverse() * state.matrix();
+  auto [Q, u, X_bar, theta, cos_theta, sin_theta, beta0] = EEdistSE3Variables(Z);
+  Eigen::Matrix3d Q2 = Q * Q;
+  float Q_trace = Q.trace();
+  float Q2_trace = Q2.trace();
+  Eigen::VectorXd g_vec = Eigen::VectorXd::Zero(6);
+  Eigen::VectorXd f_vec = Eigen::VectorXd::Zero(6);
+
+  Eigen::Vector3d ex = Eigen::Vector3d::UnitX();
+  Eigen::Vector3d ey = Eigen::Vector3d::UnitY();
+  Eigen::Vector3d ez = Eigen::Vector3d::UnitZ();
+  Eigen::Vector3d Shat_e1_tranZ = Shat(ex) * u;
+  Eigen::Vector3d Shat_e2_tranZ = Shat(ey) * u;
+  Eigen::Vector3d Shat_e3_tranZ = Shat(ez) * u;
+  
+  Eigen::Matrix3d Shat_e1_Q = Shat(ex) * Q;
+  Eigen::Matrix3d Shat_e2_Q = Shat(ey) * Q;
+  Eigen::Matrix3d Shat_e3_Q = Shat(ez) * Q;
+
+  // g_vec(3) = (Q(1, 2) - Q(2, 1));
+  // g_vec(4) = (Q(2, 0) - Q(0, 2));
+  // g_vec(5) = (Q(0, 1) - Q(1, 0));
+  g_vec(3) = Shat_e1_Q.trace();
+  g_vec(4) = Shat_e2_Q.trace();
+  g_vec(5) = Shat_e3_Q.trace();
+  // g_vec = g_vec/2;
+  // std::cout << "Computed g_vec" << std::endl;
+  // f_vec(3) = (Q2(1, 2) - Q2(2, 1));
+  // f_vec(4) = (Q2(2, 0) - Q2(0, 2));
+  // f_vec(5) = (Q2(0, 1) - Q2(1, 0));
+  f_vec(3) = (Shat(ex) * Q2).trace();
+  f_vec(4) = (Shat(ey) * Q2).trace();
+  f_vec(5) = (Shat(ez) * Q2).trace();
+  // f_vec = f_vec/2;
+  // std::cout << "Computed f_vec" << std::endl;
+  // std::cout << "f_vec:" << f_vec << std::endl;
+  // std::cout << "g_vec:" << g_vec << std::endl;
+
+  // float Ltheta_den = (3/4) - ((1/4) * Q2_trace) + ((1/4) * pow((Q_trace - 1), 2));
+  // std::cout << "Q_trace: " << Q_trace << std::endl;
+  // std::cout << "Q2_trace: " << Q2_trace << std::endl;
+  // std::cout << "Ltheta_den: " << Ltheta_den << std::endl;
+  float sqrt_term = sqrt(3 - Q2_trace);
+  // float g_mult = -sqrt_term / 2;
+  // float f_mult = -((1/2) * (Q_trace - 1)) / (4 * sqrt_term);
+  // float f_mult = -1 / (4 * sqrt(3 - Q2_trace)) * cos_theta;
+  // float f_mult = -1/(8 * sin_theta) * cos_theta;
+  float f_mult = -cos_theta / (4 * sqrt(3 - Q2_trace));
+  // if (cos_theta > c_maxCosTheta){
+  //   f_mult = 0;
+  // }
+  float g_mult = -sin_theta / 2;
+  // std::cout << "g_mult: " << g_mult << std::endl;
+  // std::cout << "f_mult: " << f_mult << std::endl;
+  // Eigen::VectorXd Ltheta = (f_mult * f_vec + g_mult * g_vec) / (Ltheta_den + 1e-6);
+  Eigen::VectorXd Ltheta = ((f_mult * f_vec) + (g_mult * g_vec));
+  // std::cout << "Ltheta: " << Ltheta << std::endl;
+
+  Eigen::MatrixXd Q_T = Q.transpose().eval();
+  Eigen::Matrix3d Shat_e1_Q_T = Shat(ex) * Q_T;
+  Eigen::Matrix3d Shat_e2_Q_T = Shat(ey) * Q_T;
+  Eigen::Matrix3d Shat_e3_Q_T = Shat(ez) * Q_T;
+  // std::cout << "Shat(e1): " << Shat_e1_Q << std::endl;
+  // std::cout << "Shat(e2): " << Shat_e2_Q << std::endl;
+  // std::cout << "Shat(e3): " << Shat_e3_Q << std::endl;
+
+  Eigen::VectorXd LtranZi = Eigen::VectorXd::Zero(6);
+  Eigen::VectorXd Lpos = Eigen::VectorXd::Zero(6); // L[u^T X u]
+  // float Lbeta_num = (pow(theta, 2) * sin_theta) - theta - sin_theta + ((theta + sin_theta) * cos_theta);
+  // float Lbeta_den = 2 * pow(1 - cos_theta, 3);
+  float Lbeta_num = (-pow(theta, 2) * sin_theta) + theta + sin_theta - ((theta + sin_theta) * cos_theta);
+  float Lbeta_den = 2 * pow(cos_theta - 1, 3);
+  Eigen::VectorXd Lbeta0 = (Lbeta_num / Lbeta_den) * Ltheta;
+  Eigen::VectorXd L_Qij = Eigen::VectorXd::Zero(6);
+  Eigen::VectorXd L_Q_T_ij = Eigen::VectorXd::Zero(6);
+  Eigen::VectorXd L_Xij = Eigen::VectorXd::Zero(6);
+  // std::cout << "Computing Lpos" << std::endl;
+
+  for(int i=0; i<3; i++){
+    float tranZi = u(i);
+    std::cout << "i: " << i << std::endl;
+    LtranZi(0) = kronDelta(i, 0);
+    LtranZi(1) = kronDelta(i, 1);
+    LtranZi(2) = kronDelta(i, 2);
+    LtranZi(3) = Shat_e1_tranZ(i);
+    LtranZi(4) = Shat_e2_tranZ(i);
+    LtranZi(5) = Shat_e3_tranZ(i);
+    // std::cout << "LtranZi: " << LtranZi << std::endl;
+
+    for(int j=0; j<3; j++){
+      std::cout << "j: " << j << std::endl;
+      float tranZj = u(j);
+      float Xij = X_bar(i, j);
+      
+      L_Qij(3) = Shat_e1_Q(i, j);
+      L_Qij(4) = Shat_e2_Q(i, j);
+      L_Qij(5) = Shat_e3_Q(i, j);
+      L_Q_T_ij(3) = Shat_e1_Q(j, i);
+      L_Q_T_ij(4) = Shat_e2_Q(j, i);
+      L_Q_T_ij(5) = Shat_e3_Q(j, i);
+      // L_Q_T_ij(3) = Shat_e1_Q_T(i, j);
+      // L_Q_T_ij(4) = Shat_e2_Q_T(i, j);
+      // L_Q_T_ij(5) = Shat_e3_Q_T(i, j);
+
+      L_Xij = (Lbeta0 * (-2*kronDelta(i, j) + Q(i,j) + Q(j,i))) + (beta0 * (L_Qij + L_Q_T_ij));
+      // std::cout << "L[Qij]" << L_Qij << std::endl;
+      // std::cout << "L[Q^T_ij]" << L_Xij << std::endl;
+      Lpos += (2*LtranZi * tranZj * Xij) + (tranZi * tranZj * L_Xij);
+    }
+  }
+  // std::cout << "Lpos: " << Lpos << std::endl;
+
+  Eigen::VectorXd L_Ehat;
+  L_Ehat = (1 / (2*min_dist + 1e-6)) * ((4 * theta * Ltheta) + Lpos);
+  // std::cout << "Computed L[E]" << std::endl;
+
+  Eigen::MatrixXd Z_chain = Eigen::MatrixXd::Zero(6, 6);
+  Eigen::MatrixXd Rd = W.block<3, 3>(0, 0);
+  Eigen::VectorXd pd = W.block<3, 1>(0, 3);
+  Eigen::MatrixXd Rd_T = Rd.transpose().eval();
+  
+  Z_chain.block<3, 3>(0, 0) = Rd_T;
+  Z_chain.block<3, 3>(0, 3) = -Rd_T * Shat(pd);
+  Z_chain.block<3, 3>(3, 3) = Rd_T;
+
+  // std::cout << "Z_chain:" << Z_chain << std::endl;
+  // std::cout << "L[E]:" << L_Ehat << std::endl;  
+  
+  Eigen::VectorXd normal_component = -L_Ehat.transpose().eval() * Z_chain;
+  // std::cout << "Return normal:" << normal_component << std::endl;
+  
+
+  Eigen::MatrixXd closest_point = curve.at(min_index);
+  int m = 6;
+  Eigen::VectorXd normal = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd I = Eigen::MatrixXd::Identity(m, m);
+  Eigen::MatrixXd LvDhat = Eigen::VectorXd::Zero(m);  // L-operator wrt V of EEdistance
+  float eps = 1e-3;
+
+  for (int i = 0; i < m; i++) {
+    Eigen::MatrixXd variation =
+        (state.algebra().S(I.col(i)) * eps).exp() * state;
+    float dDistance = EEdistance(variation, closest_point);
+    LvDhat(i) = (dDistance - min_dist) / (eps);
+  }
+  normal = -LvDhat;
+
+  // Compares normal and normal_component element-wise
+  std::cout << "normal explicit" << normal_component.transpose().eval() << std::endl;
+  std::cout << "normal approx" << normal.transpose().eval() << std::endl;
+  for (int i=0; i<normal.size(); i++){
+    float norm_ = abs(normal(i) - normal_component(i));
+    std::cout << "Normal error: " << norm_ << std::endl;
+    // check if norm_ is nan:
+    if (norm_ != norm_){
+      std::cout << "NAN ERROR" << std::endl;
+      std::cout << "Q2 trace: " << Q2_trace << std::endl;
+      throw std::runtime_error("NAN ERROR");
+    }
+  }
+  std::cout << "normal error tot: " << (normal - normal_component).norm() << std::endl;
+  std::cout << "beta0: " << beta0 << std::endl;
+  std::cout << "cos theta: " << cos_theta << std::endl;
+  std::cout << "sin theta: " << sin_theta << std::endl;
+  std::cout << "theta: " << theta << std::endl;
+
   return normal_component;
 }
 

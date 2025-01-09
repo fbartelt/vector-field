@@ -1,10 +1,10 @@
 #%%
-import uaibot as ub
-from uaibot.utils import Utils
-from uaibot.simulation import Simulation
-from uaibot.simobjects.frame import Frame
-from uaibot.simobjects.pointcloud import PointCloud
-from uaibot.simobjects.ball import Ball
+# import uaibot as ub
+# from uaibot.utils import Utils
+# from uaibot.simulation import Simulation
+# from uaibot.simobjects.frame import Frame
+# from uaibot.simobjects.pointcloud import PointCloud
+# from uaibot.simobjects.ball import Ball
 import numpy as np
 import csv
 
@@ -41,9 +41,10 @@ def read_csv_and_restore(filename, isvfdata=True):
 
 # Example usage:
 option = ''
-results = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/vf_data{option}.csv')
-curve = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/curve_data{option}.csv', isvfdata=False)
-states = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/iteration_data{option}.csv', isvfdata=False)
+pref = 'NEW_'
+results = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}vf_data{option}.csv')
+curve = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}curve_data{option}.csv', isvfdata=False)
+states = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}iteration_data{option}.csv', isvfdata=False)
 
 #%%
 dt = 0.01
@@ -127,7 +128,7 @@ fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
 fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
                   width=718.110, height=605.9155)
 fig.show()
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/distance_pos_ori_D.svg")
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/distance_pos_ori_D.svg")
 #%%
 """Plot distance D"""
 import plotly.graph_objects as go
@@ -146,7 +147,7 @@ fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
                   width=718.110, height=403.937)
 
 fig.show()
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/distanceD.svg")
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/distanceD.svg")
 # %%
 import plotly.graph_objects as go
 closest_points, tangents, normals, distances = zip(*results)
@@ -213,8 +214,8 @@ curve_positions = np.array(curve_positions).reshape(-1, 3)
 vfs = np.array(vfs).reshape(-1, 3)
 obj_frames = np.array(obj_frames).reshape(-1, 3, 3)
 
-final_ball = 1450 # 499 for 1st, 970 for 2nd, 1450 for 3rd
-init_ball = 970  # 0 for 1st, 499 for 2nd, 970 for 3rd
+final_ball = 0 # 499 for 1st, 970 for 2nd, 1450 for 3rd
+init_ball = len(obj_positions) -1 # 0 for 1st, 499 for 2nd, 970 for 3rd
 xticks = [-2, 1.1]
 yticks = [-1.2, 1.1]
 zticks = [0, 1.3] 
@@ -289,7 +290,7 @@ fig.update_layout(**args)
 
 # fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
 fig.show()
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/vf_automatica_3.pdf")
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/vf_automatica_3.pdf")
 # %%
 """ PLOT CURVE WITH FRAMES -- CBA presentation"""
 import plotly.express as px

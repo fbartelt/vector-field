@@ -179,8 +179,8 @@ void test_VectorField(){
 
     // Simulate system
     float dt = 0.01;
-    float T = 15.0;
-    float gain_N = 20.0;
+    float T = 10.0;
+    float gain_N = 1.0;
     float gain_T = 1.0;
     int n_steps = T / dt;
     SE3 state = state0;
@@ -195,9 +195,13 @@ void test_VectorField(){
         //     std::cout << "Iteration " << i << std::endl;
         //     std::cout << "State matrix: " << std::endl << state.matrix() << std::endl;
         // }
+        std::cout << "Call eval" << std::endl;
         Eigen::VectorXd xi = vf.eval(state, true, 1.0, gain_N, 1.0, 1.0, gain_T);
+        std::cout << "Call S" << std::endl;
         se3 liealg = state.algebra().S(xi);
+        std::cout << "Build next_mat" << std::endl;
         Eigen::MatrixXd next_mat = (liealg * dt).exp() * state.matrix();
+        std::cout << "Build SE3" << std::endl;
         Eigen::MatrixXd debug_mat = (liealg * dt).exp();
         // print determinants:
         // std::cout << "Determinant of state: " << state.matrix().determinant() << std::endl;
