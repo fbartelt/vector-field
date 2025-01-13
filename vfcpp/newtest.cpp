@@ -179,7 +179,7 @@ void test_VectorField(){
 
     // Simulate system
     float dt = 0.01;
-    float T = 10.0;
+    float T = 5.0;
     float gain_N = 1.0;
     float gain_T = 1.0;
     int n_steps = T / dt;

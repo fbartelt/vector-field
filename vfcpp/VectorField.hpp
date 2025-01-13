@@ -157,17 +157,17 @@ class VectorField {
     Eigen::Matrix3d Q = Z.block<3, 3>(0, 0);
     Eigen::Vector3d t = Z.block<3, 1>(0, 3);
     float cos_theta = 0.5 * (Q.trace() - 1);
-    float sin_theta = 1 / (2 * sqrt(2)) * (Q - Q.inverse()).norm();
+    float sin_theta = 1.0 / (2.0 * sqrt(2)) * (Q - Q.inverse()).norm();
     float theta = atan2(sin_theta, cos_theta);
     cos_theta = cos(theta);
     sin_theta = sin(theta);
 
     float alpha;
     if (cos_theta > c_maxCosTheta) {
-      alpha = -1 / 12;
+      alpha = -(1.0 / 12);
     } else {
       alpha =
-          (2.0 - 2 * cos_theta - pow(theta, 2)) / (4 * pow((1 - cos_theta), 2));
+          (2.0 - 2 * cos_theta - pow(theta, 2)) / (4.0 * pow((1 - cos_theta), 2));
     }
     Eigen::Matrix3d M = alpha * (Q + Q.inverse()) +
                         (1 - 2 * alpha) * Eigen::Matrix3d::Identity();
@@ -199,7 +199,7 @@ inline float VectorField<SE3>::EEdistance(
   Eigen::MatrixXd Z = state.matrix().inverse() * W;
   auto [Q, t, M, theta, cos_theta, sin_theta, alpha] = EEdistSE3Variables(Z);
 
-  float distance = sqrt(2 * pow(theta, 2) + t.transpose() * M * t);
+  float distance = sqrt(2.0 * pow(theta, 2) + t.transpose() * M * t);
   return distance;
 }
 
@@ -243,6 +243,16 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   f_vec(3) = (Shat(ex) * Q2).trace();
   f_vec(4) = (Shat(ey) * Q2).trace();
   f_vec(5) = (Shat(ez) * Q2).trace();
+
+  Eigen::VectorXd f_test = Eigen::VectorXd::Zero(6);
+  Eigen::VectorXd g_test = Eigen::VectorXd::Zero(6);
+  f_test(3) = Q2(1, 2) - Q2(2, 1);
+  f_test(4) = Q2(2, 0) - Q2(0, 2);
+  f_test(5) = Q2(0, 1) - Q2(1, 0);
+  g_test(3) = Q(1, 2) - Q(2, 1);
+  g_test(4) = Q(2, 0) - Q(0, 2);
+  g_test(5) = Q(0, 1) - Q(1, 0);
+
   // f_vec = f_vec/2;
   // std::cout << "Computed f_vec" << std::endl;
   // std::cout << "f_vec:" << f_vec << std::endl;
@@ -257,11 +267,11 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   // float f_mult = -((1/2) * (Q_trace - 1)) / (4 * sqrt_term);
   // float f_mult = -1 / (4 * sqrt(3 - Q2_trace)) * cos_theta;
   // float f_mult = -1/(8 * sin_theta) * cos_theta;
-  float f_mult = -cos_theta / (4 * sqrt(3 - Q2_trace));
+  float f_mult = -cos_theta / (4.0 * sqrt(3 - Q2_trace));
   // if (cos_theta > c_maxCosTheta){
   //   f_mult = 0;
   // }
-  float g_mult = -sin_theta / 2;
+  float g_mult = -sin_theta / 2.0;
   // std::cout << "g_mult: " << g_mult << std::endl;
   // std::cout << "f_mult: " << f_mult << std::endl;
   // Eigen::VectorXd Ltheta = (f_mult * f_vec + g_mult * g_vec) / (Ltheta_den + 1e-6);
@@ -281,7 +291,7 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   // float Lbeta_num = (pow(theta, 2) * sin_theta) - theta - sin_theta + ((theta + sin_theta) * cos_theta);
   // float Lbeta_den = 2 * pow(1 - cos_theta, 3);
   float Lbeta_num = (-pow(theta, 2) * sin_theta) + theta + sin_theta - ((theta + sin_theta) * cos_theta);
-  float Lbeta_den = 2 * pow(cos_theta - 1, 3);
+  float Lbeta_den = 2.0 * pow(cos_theta - 1, 3);
   Eigen::VectorXd Lbeta0 = (Lbeta_num / Lbeta_den) * Ltheta;
   Eigen::VectorXd L_Qij = Eigen::VectorXd::Zero(6);
   Eigen::VectorXd L_Q_T_ij = Eigen::VectorXd::Zero(6);
@@ -290,17 +300,17 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
 
   for(int i=0; i<3; i++){
     float tranZi = u(i);
-    std::cout << "i: " << i << std::endl;
+    // std::cout << "i: " << i << std::endl;
     LtranZi(0) = kronDelta(i, 0);
     LtranZi(1) = kronDelta(i, 1);
     LtranZi(2) = kronDelta(i, 2);
     LtranZi(3) = Shat_e1_tranZ(i);
     LtranZi(4) = Shat_e2_tranZ(i);
     LtranZi(5) = Shat_e3_tranZ(i);
-    // std::cout << "LtranZi: " << LtranZi << std::endl;
+    // std::cout << "LtranZ_" << i+1 << ": " << LtranZi.transpose().eval() << std::endl;
 
     for(int j=0; j<3; j++){
-      std::cout << "j: " << j << std::endl;
+      // std::cout << "j: " << j << std::endl;
       float tranZj = u(j);
       float Xij = X_bar(i, j);
       
@@ -314,6 +324,7 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
       // L_Q_T_ij(4) = Shat_e2_Q_T(i, j);
       // L_Q_T_ij(5) = Shat_e3_Q_T(i, j);
 
+      std::cout << "L[Q_" << i+1 << j+1 << "]: " << L_Qij.transpose().eval() << std::endl;
       L_Xij = (Lbeta0 * (-2*kronDelta(i, j) + Q(i,j) + Q(j,i))) + (beta0 * (L_Qij + L_Q_T_ij));
       // std::cout << "L[Qij]" << L_Qij << std::endl;
       // std::cout << "L[Q^T_ij]" << L_Xij << std::endl;
@@ -323,7 +334,7 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   // std::cout << "Lpos: " << Lpos << std::endl;
 
   Eigen::VectorXd L_Ehat;
-  L_Ehat = (1 / (2*min_dist + 1e-6)) * ((4 * theta * Ltheta) + Lpos);
+  L_Ehat = (1 / (2.0*min_dist + 1e-6)) * ((4.0 * theta * Ltheta) + Lpos);
   // std::cout << "Computed L[E]" << std::endl;
 
   Eigen::MatrixXd Z_chain = Eigen::MatrixXd::Zero(6, 6);
@@ -342,40 +353,111 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   // std::cout << "Return normal:" << normal_component << std::endl;
   
 
-  Eigen::MatrixXd closest_point = curve.at(min_index);
+  // Eigen::MatrixXd closest_point = curve.at(min_index);
   int m = 6;
   Eigen::VectorXd normal = Eigen::VectorXd::Zero(m);
   Eigen::MatrixXd I = Eigen::MatrixXd::Identity(m, m);
   Eigen::MatrixXd LvDhat = Eigen::VectorXd::Zero(m);  // L-operator wrt V of EEdistance
-  float eps = 1e-3;
+  Eigen::MatrixXd LvTheta = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LvPos = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LvBeta = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LvCos = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LvSin = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ11 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ12 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ13 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ21 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ22 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ23 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ31 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ32 = Eigen::VectorXd::Zero(m);
+  Eigen::MatrixXd LQ33 = Eigen::VectorXd::Zero(m);
+
+
+
+  float eps = 1e-5;
 
   for (int i = 0; i < m; i++) {
     Eigen::MatrixXd variation =
         (state.algebra().S(I.col(i)) * eps).exp() * state;
-    float dDistance = EEdistance(variation, closest_point);
+    float dDistance = EEdistance(variation, W);
+    Eigen::MatrixXd Z_ = (state.algebra().S(I.col(i)) * eps).exp() * Z;
+    // Eigen::MatrixXd Z_ = W.matrix().inverse() * variation.matrix();
+    auto [Q_, u_, X_bar_, theta_, cos_theta_, sin_theta_, beta0_] = EEdistSE3Variables(Z_);
     LvDhat(i) = (dDistance - min_dist) / (eps);
+    LvTheta(i) = (theta_ - theta) / eps;
+    float p_cur = (u.transpose().eval() * Q * u);
+    float p_next = (u_.transpose().eval() * Q_ * u_);
+    LvPos(i) = (p_next - p_cur) / (eps);
+    LvBeta(i) = (beta0_ - beta0) / eps;
+    LvCos(i) = (cos_theta_ - cos_theta) / eps;
+    LvSin(i) = (sin_theta_ - sin_theta) / eps;
+    LQ11(i) = (Q_(0, 0) - Q(0, 0)) / eps;
+    LQ12(i) = (Q_(0, 1) - Q(0, 1)) / eps;
+    LQ13(i) = (Q_(0, 2) - Q(0, 2)) / eps;
+    LQ21(i) = (Q_(1, 0) - Q(1, 0)) / eps;
+    LQ22(i) = (Q_(1, 1) - Q(1, 1)) / eps;
+    LQ23(i) = (Q_(1, 2) - Q(1, 2)) / eps;
+    LQ31(i) = (Q_(2, 0) - Q(2, 0)) / eps;
+    LQ32(i) = (Q_(2, 1) - Q(2, 1)) / eps;
+    LQ33(i) = (Q_(2, 2) - Q(2, 2)) / eps;
   }
   normal = -LvDhat;
 
+  std::cout << "LQ11: " << LQ11.transpose().eval() << std::endl;
+  std::cout << "LQ12: " << LQ12.transpose().eval() << std::endl;
+  std::cout << "LQ13: " << LQ13.transpose().eval() << std::endl;
+  std::cout << "LQ21: " << LQ21.transpose().eval() << std::endl;
+  std::cout << "LQ22: " << LQ22.transpose().eval() << std::endl;
+  std::cout << "LQ23: " << LQ23.transpose().eval() << std::endl;
+  std::cout << "LQ31: " << LQ31.transpose().eval() << std::endl;
+  std::cout << "LQ32: " << LQ32.transpose().eval() << std::endl;
+  std::cout << "LQ33: " << LQ33.transpose().eval() << std::endl;
+
+  std::cout << "L[cos]: " << (g_vec/2.0).transpose().eval() << std::endl;
+  std::cout << "Lvcos: " << LvCos.transpose().eval() << std::endl;
+  std::cout << "L[sin]: " << (-f_vec/((4.0 * sqrt(3 - Q2_trace)))).transpose().eval() << std::endl;
+  std::cout << "Lvsin: " << LvSin.transpose().eval() << std::endl;
   // Compares normal and normal_component element-wise
   std::cout << "normal explicit" << normal_component.transpose().eval() << std::endl;
   std::cout << "normal approx" << normal.transpose().eval() << std::endl;
+  // DEBUGGING
+  // LtransZi -- CORRECT !!
+  // L[cos] -- 3e-3 error ~ok
+  // L[sin] -- LARGER ERROR
+  // L[theta] -- Wrong (depends on L[sin] and L[cos])
+  // L[beta] -- Wrong (depends on Ltheta)
+  // Lpos -- Wrong (depends on Lbeta->Ltheta)
+  // L[Qij] -- CORRECT !!
+  // L[X_ij] -- Depends on Lbeta->Ltheta
+  std::cout << "Ltheta: " << Ltheta.transpose().eval()  << std::endl;
+  std::cout << "Ltheta_approx: " << LvTheta.transpose().eval() << std::endl;
+  std::cout << "Ltheta norm: " << (Ltheta - LvTheta).norm() << std::endl;
+  std::cout << "Lpos: " << Lpos.transpose().eval()  << std::endl;
+  std::cout << "Lpos_approx: " << LvPos.transpose().eval() << std::endl;
+  std::cout << "Lpos norm: " << (Lpos - LvPos).norm() << std::endl;
+  std::cout << "Lbeta0: " << Lbeta0.transpose().eval()  << std::endl;
+  std::cout << "Lbeta0_approx: " << LvBeta.transpose().eval() << std::endl;
+  std::cout << "Lbeta norm: " << (Lbeta0 - LvBeta).norm() << std::endl;
+  // std::cout << "Ltheta: " << Ltheta.transpose().eval() * Z_chain << std::endl;
+
+
   for (int i=0; i<normal.size(); i++){
     float norm_ = abs(normal(i) - normal_component(i));
-    std::cout << "Normal error: " << norm_ << std::endl;
+    // std::cout << "Normal error: " << norm_ << std::endl;
     // check if norm_ is nan:
-    if (norm_ != norm_){
-      std::cout << "NAN ERROR" << std::endl;
-      std::cout << "Q2 trace: " << Q2_trace << std::endl;
-      throw std::runtime_error("NAN ERROR");
-    }
+    // if (norm_ != norm_){
+    //   std::cout << "NAN ERROR" << std::endl;
+    //   std::cout << "Q2 trace: " << Q2_trace << std::endl;
+    //   throw std::runtime_error("NAN ERROR");
+    // }
   }
   std::cout << "normal error tot: " << (normal - normal_component).norm() << std::endl;
   std::cout << "beta0: " << beta0 << std::endl;
   std::cout << "cos theta: " << cos_theta << std::endl;
   std::cout << "sin theta: " << sin_theta << std::endl;
   std::cout << "theta: " << theta << std::endl;
-
+  std::cout << "--------------------------------------------------------------" << std::endl;
   return normal_component;
 }
 
