@@ -407,3 +407,11 @@ fig.show()
 # import plotly.io as pio
 # pio.write_image(fig, '/home/fbartelt/Documents/Projetos/dissertation/figures/curve_with_frames.svg',scale=2, width=718.110, height=403.937)
 # %%
+""" TEST APPROX NORMAL VS EXPLICIT"""
+import pandas as pd
+import plotly.express as px
+
+df = pd.read_csv('/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/NEW_normerr.csv', header=None)
+df.dropna(inplace=True)
+px.line(df)
+# %%

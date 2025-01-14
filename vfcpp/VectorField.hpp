@@ -94,6 +94,7 @@ class VectorField {
   std::vector<
       std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd, float>>
       iterationResults;
+  std::vector<float> norm_hist;
 
   VectorField(const std::vector<Eigen::MatrixXd>& curve, float delta = c_delta,
               float ds_ = c_ds)
@@ -267,7 +268,7 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   // float f_mult = -((1/2) * (Q_trace - 1)) / (4 * sqrt_term);
   // float f_mult = -1 / (4 * sqrt(3 - Q2_trace)) * cos_theta;
   // float f_mult = -1/(8 * sin_theta) * cos_theta;
-  float f_mult = -cos_theta / (4.0 * sqrt(3 - Q2_trace));
+  float f_mult = -2.0*cos_theta / (4.0 * sqrt(3 - Q2_trace));
   // if (cos_theta > c_maxCosTheta){
   //   f_mult = 0;
   // }
@@ -324,7 +325,6 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
       // L_Q_T_ij(4) = Shat_e2_Q_T(i, j);
       // L_Q_T_ij(5) = Shat_e3_Q_T(i, j);
 
-      std::cout << "L[Q_" << i+1 << j+1 << "]: " << L_Qij.transpose().eval() << std::endl;
       L_Xij = (Lbeta0 * (-2*kronDelta(i, j) + Q(i,j) + Q(j,i))) + (beta0 * (L_Qij + L_Q_T_ij));
       // std::cout << "L[Qij]" << L_Qij << std::endl;
       // std::cout << "L[Q^T_ij]" << L_Xij << std::endl;
@@ -381,8 +381,8 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
     Eigen::MatrixXd variation =
         (state.algebra().S(I.col(i)) * eps).exp() * state;
     float dDistance = EEdistance(variation, W);
-    Eigen::MatrixXd Z_ = (state.algebra().S(I.col(i)) * eps).exp() * Z;
-    // Eigen::MatrixXd Z_ = W.matrix().inverse() * variation.matrix();
+    // Eigen::MatrixXd Z_ = (state.algebra().S(I.col(i)) * eps).exp() * Z;
+    Eigen::MatrixXd Z_ = W.matrix().inverse() * variation.matrix();
     auto [Q_, u_, X_bar_, theta_, cos_theta_, sin_theta_, beta0_] = EEdistSE3Variables(Z_);
     LvDhat(i) = (dDistance - min_dist) / (eps);
     LvTheta(i) = (theta_ - theta) / eps;
@@ -404,41 +404,31 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
   }
   normal = -LvDhat;
 
-  std::cout << "LQ11: " << LQ11.transpose().eval() << std::endl;
-  std::cout << "LQ12: " << LQ12.transpose().eval() << std::endl;
-  std::cout << "LQ13: " << LQ13.transpose().eval() << std::endl;
-  std::cout << "LQ21: " << LQ21.transpose().eval() << std::endl;
-  std::cout << "LQ22: " << LQ22.transpose().eval() << std::endl;
-  std::cout << "LQ23: " << LQ23.transpose().eval() << std::endl;
-  std::cout << "LQ31: " << LQ31.transpose().eval() << std::endl;
-  std::cout << "LQ32: " << LQ32.transpose().eval() << std::endl;
-  std::cout << "LQ33: " << LQ33.transpose().eval() << std::endl;
-
-  std::cout << "L[cos]: " << (g_vec/2.0).transpose().eval() << std::endl;
-  std::cout << "Lvcos: " << LvCos.transpose().eval() << std::endl;
-  std::cout << "L[sin]: " << (-f_vec/((4.0 * sqrt(3 - Q2_trace)))).transpose().eval() << std::endl;
-  std::cout << "Lvsin: " << LvSin.transpose().eval() << std::endl;
+  // std::cout << "L[cos]: " << (g_vec/2.0).transpose().eval() << std::endl;
+  // std::cout << "Lvcos: " << LvCos.transpose().eval() << std::endl;
+  // std::cout << "L[sin]: " << (-2.0*f_vec/((4.0 * sqrt(3 - Q2_trace)))).transpose().eval() << std::endl;
+  // std::cout << "Lvsin: " << LvSin.transpose().eval() << std::endl;
   // Compares normal and normal_component element-wise
   std::cout << "normal explicit" << normal_component.transpose().eval() << std::endl;
   std::cout << "normal approx" << normal.transpose().eval() << std::endl;
   // DEBUGGING
   // LtransZi -- CORRECT !!
   // L[cos] -- 3e-3 error ~ok
-  // L[sin] -- LARGER ERROR
-  // L[theta] -- Wrong (depends on L[sin] and L[cos])
-  // L[beta] -- Wrong (depends on Ltheta)
-  // Lpos -- Wrong (depends on Lbeta->Ltheta)
+  // L[sin] -- 3e-3 error ~ok
+  // L[theta] -- 3e-3 error ~ok
+  // L[beta] -- Wrong ?? 30e0 error
+  // Lpos -- 6e-3 error ~ok
   // L[Qij] -- CORRECT !!
-  // L[X_ij] -- Depends on Lbeta->Ltheta
-  std::cout << "Ltheta: " << Ltheta.transpose().eval()  << std::endl;
-  std::cout << "Ltheta_approx: " << LvTheta.transpose().eval() << std::endl;
-  std::cout << "Ltheta norm: " << (Ltheta - LvTheta).norm() << std::endl;
-  std::cout << "Lpos: " << Lpos.transpose().eval()  << std::endl;
-  std::cout << "Lpos_approx: " << LvPos.transpose().eval() << std::endl;
-  std::cout << "Lpos norm: " << (Lpos - LvPos).norm() << std::endl;
-  std::cout << "Lbeta0: " << Lbeta0.transpose().eval()  << std::endl;
+  // L[X_ij] -- Didnt check, must be ok cuz Lpos
+  // std::cout << "Ltheta: " << Ltheta.transpose().eval()  << std::endl;
+  // std::cout << "Ltheta_approx: " << LvTheta.transpose().eval() << std::endl;
+  std::cout << "Ltheta norm: " << ((Ltheta.transpose().eval() * Z_chain) - LvTheta.transpose().eval()).norm() << std::endl;
+  // std::cout << "Lpos: " << Lpos.transpose().eval()  << std::endl;
+  // std::cout << "Lpos_approx: " << LvPos.transpose().eval() << std::endl;
+  std::cout << "Lpos norm: " << ((Lpos.transpose().eval() * Z_chain) - LvPos.transpose().eval()).norm() << std::endl;
+  std::cout << "Lbeta0: " << (Lbeta0.transpose().eval() * Z_chain)  << std::endl;
   std::cout << "Lbeta0_approx: " << LvBeta.transpose().eval() << std::endl;
-  std::cout << "Lbeta norm: " << (Lbeta0 - LvBeta).norm() << std::endl;
+  std::cout << "Lbeta norm: " << ((Lbeta0.transpose().eval() * Z_chain) - LvBeta.transpose().eval()).norm() << std::endl;
   // std::cout << "Ltheta: " << Ltheta.transpose().eval() * Z_chain << std::endl;
 
 
@@ -452,6 +442,7 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
     //   throw std::runtime_error("NAN ERROR");
     // }
   }
+  norm_hist.push_back((normal - normal_component).norm());
   std::cout << "normal error tot: " << (normal - normal_component).norm() << std::endl;
   std::cout << "beta0: " << beta0 << std::endl;
   std::cout << "cos theta: " << cos_theta << std::endl;

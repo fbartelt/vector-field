@@ -179,7 +179,7 @@ void test_VectorField(){
 
     // Simulate system
     float dt = 0.01;
-    float T = 5.0;
+    float T = 8.0;
     float gain_N = 1.0;
     float gain_T = 1.0;
     int n_steps = T / dt;
@@ -222,6 +222,14 @@ void test_VectorField(){
     writeToCSV(vf.iterationResults, "/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/NEW_vf_data.csv");
     write_curve2csv(curve, "/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/NEW_curve_data.csv");
     write_curve2csv(updated_states, "/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/NEW_iteration_data.csv");
+
+    // Write to csv a vector<double>:
+    std::ofstream csvFile;
+    csvFile.open("/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/NEW_normerr.csv");
+    for (const auto& data : vf.norm_hist){
+        csvFile << data << "\n";
+    }
+    csvFile.close();
 }
 
 int main(){
