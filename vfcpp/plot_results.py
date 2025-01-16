@@ -7,6 +7,7 @@
 # from uaibot.simobjects.ball import Ball
 import numpy as np
 import csv
+from scipy.linalg import expm, logm
 
 def read_csv_and_restore(filename, isvfdata=True):
     iteration_results = []
@@ -41,7 +42,7 @@ def read_csv_and_restore(filename, isvfdata=True):
 
 # Example usage:
 option = ''
-pref = 'NEW_'
+pref = 'LORENTZ_'
 results = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}vf_data{option}.csv')
 curve = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}curve_data{option}.csv', isvfdata=False)
 states = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}iteration_data{option}.csv', isvfdata=False)
@@ -77,6 +78,7 @@ sim.set_parameters(
 sim.run()
 # %%
 import plotly.express as px
+import pandas as pd
 closest_points, tangents, normals, distances = zip(*results)
 
 norms = []
@@ -86,7 +88,21 @@ for normal, tangent in zip(normals, tangents):
     xit = np.array(tangent).reshape(-1, 1)
     norms.append(float(180/np.pi * np.arccos((xin.T @ xit) / (1e-6 + np.linalg.norm(xin) * np.linalg.norm(xit)))))
 
-px.line(norms)
+# px.line(norms)
+x = np.array([0, 0, 0, 1]).reshape(-1, 1)
+xp_hist = []
+tp_hist = []
+for H in states:
+    xp = H @ x
+    xp_hist.append(xp[0])
+    tp_hist.append(xp[-1])
+
+px.line(y=np.array(xp_hist).ravel(), title='xpos').show()
+px.line(y=np.array(tp_hist).ravel(), title='time').show()
+px.line(distances, title='D').show()
+
+df = pd.read_csv('/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/LORENTZ_closeidx.csv', header=None)
+
 # %%
 import plotly.express as px
 import plotly.graph_objects as go
