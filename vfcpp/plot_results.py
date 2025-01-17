@@ -78,6 +78,7 @@ sim.set_parameters(
 sim.run()
 # %%
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 closest_points, tangents, normals, distances = zip(*results)
 
@@ -89,16 +90,52 @@ for normal, tangent in zip(normals, tangents):
     norms.append(float(180/np.pi * np.arccos((xin.T @ xit) / (1e-6 + np.linalg.norm(xin) * np.linalg.norm(xit)))))
 
 # px.line(norms)
-x = np.array([0, 0, 0, 1]).reshape(-1, 1)
-xp_hist = []
-tp_hist = []
-for H in states:
+xp_hist, yp_hist, zp_hist, tp_hist = [], [], [], []
+x_ref, y_ref, z_ref, t_ref = [], [], [], []
+proper_time = []
+elapsed_time = 0
+dt = 0.001
+for i, H in enumerate(states):
+    t = i * dt
+    ang = (2 * np.pi / 10) * t
+    radius = 15
+    x = np.array([radius*np.cos(ang) -12, radius*np.sin(ang) - 12, 1, t]).reshape(-1, 1)
+    # x = np.array([1, -5*t, 1, t]).reshape(-1, 1)
     xp = H @ x
+    gamma = H[0, 0]
+    v = -H[0, -1] / gamma
+    elapsed_time = np.sqrt(dt**2 - (v * dt)**2) + elapsed_time
     xp_hist.append(xp[0])
-    tp_hist.append(xp[-1])
+    yp_hist.append(xp[1])
+    zp_hist.append(x[2])
+    tp_hist.append(elapsed_time)
+    x_ref.append(x[0])
+    y_ref.append(x[1])
+    z_ref.append(x[2])
+    t_ref.append(t)
 
-px.line(y=np.array(xp_hist).ravel(), title='xpos').show()
-px.line(y=np.array(tp_hist).ravel(), title='time').show()
+for i in range(len(xp_hist) - 1):
+    delta_x = xp_hist[i + 1] - xp_hist[i]
+    delta_y = yp_hist[i + 1] - yp_hist[i]
+    delta_z = zp_hist[i + 1] - zp_hist[i]
+    delta_t = tp_hist[i + 1] - tp_hist[i]
+    proper_time.append(np.sqrt(delta_x**2 + delta_y**2 + delta_z**2 - delta_t**2))
+    
+
+# px.line(x=np.array(xp_hist).ravel(), y=np.array(yp_hist).ravel(), title='xpos').show()
+fig=go.Figure(go.Scatter3d(x=np.array(xp_hist).ravel(), 
+                           y=np.array(yp_hist).ravel(), 
+                           z=np.array(zp_hist).ravel(), 
+                           mode='lines', name='rel.', line=dict(width=4)))
+fig.add_trace(go.Scatter3d(x=np.array(x_ref).ravel(), 
+                           y=np.array(y_ref).ravel(), 
+                           z=np.array(z_ref).ravel(), 
+                           mode='lines', name='real', line=dict(width=4)))
+# Makes x-y axis equal in range
+# fig.update_scenes(xaxis=dict(range=[np.min(xp_hist)*1.1, np.max(xp_hist)*1.1]), 
+#                   yaxis=dict(range=[np.min(xp_hist)*1.1, np.max(xp_hist)*1.1]))
+fig.show()
+px.line(x=np.array(t_ref).ravel(), y=np.array(tp_hist).ravel(), title='time').show()
 px.line(distances, title='D').show()
 
 df = pd.read_csv('/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/LORENTZ_closeidx.csv', header=None)

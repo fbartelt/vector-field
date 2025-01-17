@@ -7,19 +7,20 @@
 #include "ProperOrthochronousLorentzGroup.hpp"
 #include "VectorField.hpp"
 
-std::vector<Eigen::MatrixXd> genCurve(int n_points, double v = 0.9999) {
+std::vector<Eigen::MatrixXd> genCurve(int n_points, double v0 = 0.999, double vv = 0.0001) {
   std::vector<Eigen::MatrixXd> curve;
   for (int i = 0; i < n_points; i++) {
     // Create a point on the circle
     double s = 2 * M_PI * i / n_points;
-    double beta_x = v * 0.5 * (cos(s) + 1);
-    double gamma_x = 1 / sqrt(1 - pow(beta_x, 2));
+    // double beta_x = v * 0.5 * (cos(s) + 1);
+    double beta_x = v0 + 0.5 * vv * (1 + cos(s));
+    double gamma_x = 1.0000 / sqrt(1.0 - pow(beta_x, 2.0));
     Eigen::MatrixXd boost_x(4, 4);
     // Default format is (x, y, z, t)
     boost_x << gamma_x, 0, 0, -gamma_x * beta_x, 
-               0, 1, 0, 0, 
-               0, 0, 1, 0,
-               -gamma_x * beta_x, 0, 0, gamma_x;
+               0, 1.0, 0, 0, 
+               0, 0, 1.0, 0,
+               -gamma_x * beta_x, 0.0, 0, gamma_x;
 
     curve.push_back(boost_x);
   }
@@ -27,18 +28,18 @@ std::vector<Eigen::MatrixXd> genCurve(int n_points, double v = 0.9999) {
 }
 
 std::vector<Eigen::MatrixXd> genCurveDerivative(int n_points,
-                                                double v = 0.9999) {
+                                                double v0 = 0.999, double vv = 0.0001) {
   std::vector<Eigen::MatrixXd> dcurve;
   for (int i = 0; i < n_points; i++) {
     // Create a point on the circle
     double s = 2.0 * M_PI * i / n_points;
-    double beta_x = v * 0.5 * (cos(s) + 1);
-    double gamma_x = 1.0 / sqrt(1 - pow(beta_x, 2));
-    double dbeta_x = -v * 0.5 * sin(s);
-    double dgamma_x = (beta_x / pow(1 - pow(beta_x, 2), 1.5)) * dbeta_x;
+    double beta_x = v0 + 0.5 * vv * (1 + cos(s));
+    double gamma_x = 1.0 / sqrt(1.0 - pow(beta_x, 2));
+    double dbeta_x = -0.5 * vv * sin(s);
+    double dgamma_x = (beta_x / pow(1.0 - pow(beta_x, 2), 1.5)) * dbeta_x;
     Eigen::MatrixXd dboost_x(4, 4);
     // Default format is (x, y, z, t)
-    dboost_x << dgamma_x, 0, 0, -dgamma_x * beta_x - gamma_x * dbeta_x, 0, 0, 0,
+    dboost_x << dgamma_x, 0.0, 0.0, -dgamma_x * beta_x - gamma_x * dbeta_x, 0, 0, 0,
         0, 0, 0, 0, 0, -dgamma_x * beta_x - gamma_x * dbeta_x, 0, 0, dgamma_x;
 
     dcurve.push_back(dboost_x);
@@ -130,6 +131,23 @@ void write_curve2csv(const std::vector<Eigen::MatrixXd>& curve, const std::strin
     std::cout << "Data successfully written to " << filename << std::endl;
 }
 
+void printProgressBar(int current, int imax) {
+  // Calculate percentage
+  int percent = static_cast<int>(100.0 * current / imax);
+
+  // Calculate the number of "=" to show in the progress bar
+  int barWidth = 50;  // Width of the progress bar in characters
+  int pos = barWidth * current / imax;
+
+  // Create the progress bar
+  std::string progressBar =
+      "[" + std::string(pos, '=') + std::string(barWidth - pos, ' ') + "]";
+
+  // Print the progress bar with the percentage
+  std::cout << "\r" << progressBar << " " << percent << "%";
+  std::cout.flush();  // Ensure the output is immediately printed
+}
+
 bool checkSO31(const Eigen::MatrixXd& mat){
     Eigen::MatrixXd Ipq = Eigen::MatrixXd::Identity(4, 4);
     Ipq(3, 3) = -1;
@@ -147,13 +165,14 @@ bool checkSO31(const Eigen::MatrixXd& mat){
 
 void test_VectorField(){
     int npoints = 15000;
-    double vel=0.9999;
-    double epsilon = 0.001;
+    double vel = 0.9;
+    double vel_var = 0.09;
+    double epsilon = 0.0001;
     double ds = 0.001;
-    std::vector<Eigen::MatrixXd> curve = genCurve(npoints, vel);
+    std::vector<Eigen::MatrixXd> curve = genCurve(npoints, vel, vel_var);
     std::cout << "Curve first point: " << std::endl << curve[0] << std::endl;
     std::cout << "curve size: " << curve.size() << std::endl;
-    std::vector<Eigen::MatrixXd> dcurve = genCurveDerivative(npoints, vel);
+    std::vector<Eigen::MatrixXd> dcurve = genCurveDerivative(npoints, vel, vel_var);
     VectorField vf = VectorField<SO31>(curve, dcurve, epsilon, ds);
     // VectorField vf = VectorField<SO31>(curve, epsilon, ds);
     // create a std::vector to store each 4x4matrix of the updated state
@@ -176,10 +195,10 @@ void test_VectorField(){
     // std::cout << "Vector field at state0: " << std::endl << psi << std::endl;
 
     // Simulate system
-    double dt = 0.01;
+    double dt = 0.001;
     double T = 20.0;
-    double gain_N = 10000.0; // 1000.0
-    double gain_T = 10000.0; // 100.0
+    double gain_N = 100.0; // 1000.0
+    double gain_T = 100.0; // 100.0
     double gain_T1 = 0.5;
     int n_steps = T / dt;
     SO31 state = state0;
@@ -189,6 +208,7 @@ void test_VectorField(){
     // Computes mean time for each iteration + standard deviation
     std::vector<double> iterationTimes;
     for (int i = 0; i < n_steps; i++) {
+        printProgressBar(i, n_steps);
         // auto start = std::chrono::high_resolution_clock::now();
         // if (i < 5){
         //     std::cout << "Iteration " << i << std::endl;
