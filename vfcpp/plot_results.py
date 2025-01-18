@@ -5,6 +5,7 @@
 # from uaibot.simobjects.frame import Frame
 # from uaibot.simobjects.pointcloud import PointCloud
 # from uaibot.simobjects.ball import Ball
+
 import numpy as np
 import csv
 from scipy.linalg import expm, logm
@@ -93,26 +94,43 @@ for normal, tangent in zip(normals, tangents):
 xp_hist, yp_hist, zp_hist, tp_hist = [], [], [], []
 x_ref, y_ref, z_ref, t_ref = [], [], [], []
 proper_time = []
+invariants = []
 elapsed_time = 0
 dt = 0.001
 for i, H in enumerate(states):
     t = i * dt
-    ang = (2 * np.pi / 10) * t
+    ang = ((2 * np.pi) / (len(states) * dt)) * t
     radius = 15
+    
+    # MOTION IN INERTIAL
     x = np.array([radius*np.cos(ang) -12, radius*np.sin(ang) - 12, 1, t]).reshape(-1, 1)
     # x = np.array([1, -5*t, 1, t]).reshape(-1, 1)
+    # x = np.array([-100, -10, 0, t]).reshape(-1, 1)
     xp = H @ x
     gamma = H[0, 0]
     v = -H[0, -1] / gamma
-    elapsed_time = np.sqrt(dt**2 - (v * dt)**2) + elapsed_time
+    delta_tau = dt / gamma
+    elapsed_time += delta_tau
+    tp_hist.append(elapsed_time)
+    t_ref.append(t)
+
+    # MOTION IN RELATIVISTIC
+    # xp = np.array([radius*np.cos(ang) -12, radius*np.sin(ang) - 12, 1, t]).reshape(-1, 1)
+    # x = np.linalg.inv(H) @ xp
+    # delta_tau = dt * gamma
+    # elapsed_time += delta_tau
+    # tp_hist.append(t)
+    # t_ref.append(elapsed_time)
+    
     xp_hist.append(xp[0])
     yp_hist.append(xp[1])
     zp_hist.append(x[2])
-    tp_hist.append(elapsed_time)
+    
     x_ref.append(x[0])
     y_ref.append(x[1])
     z_ref.append(x[2])
-    t_ref.append(t)
+    
+    invariants.append(xp[0]**2 + xp[1]**2 + xp[2]**2 - xp[3]**2)
 
 for i in range(len(xp_hist) - 1):
     delta_x = xp_hist[i + 1] - xp_hist[i]
@@ -123,14 +141,75 @@ for i in range(len(xp_hist) - 1):
     
 
 # px.line(x=np.array(xp_hist).ravel(), y=np.array(yp_hist).ravel(), title='xpos').show()
-fig=go.Figure(go.Scatter3d(x=np.array(xp_hist).ravel(), 
-                           y=np.array(yp_hist).ravel(), 
-                           z=np.array(zp_hist).ravel(), 
-                           mode='lines', name='rel.', line=dict(width=4)))
-fig.add_trace(go.Scatter3d(x=np.array(x_ref).ravel(), 
-                           y=np.array(y_ref).ravel(), 
-                           z=np.array(z_ref).ravel(), 
-                           mode='lines', name='real', line=dict(width=4)))
+# fig=go.Figure(go.Scatter3d(x=np.array(xp_hist).ravel(), 
+#                            y=np.array(yp_hist).ravel(), 
+#                            z=np.array(zp_hist).ravel(), 
+#                            mode='lines', name='rel.', line=dict(width=4)))
+# fig.add_trace(go.Scatter3d(x=np.array(x_ref).ravel(), 
+#                            y=np.array(y_ref).ravel(), 
+#                            z=np.array(z_ref).ravel(), 
+#                            mode='lines', name='real', line=dict(width=4)))
+
+fig = go.Figure()
+jump=20
+# fig.add_trace(go.Scatter(x=np.array(x_ref[::jump]).ravel(), y=np.array(y_ref[::jump]).ravel(), 
+#                          mode='markers', 
+#                          marker=dict(
+#                             size=3,
+#                             color=t_ref[::jump],
+#                             colorscale='Agsunset', 
+#                             colorbar=dict(title='Coord. Time £t£', 
+#                                           titleside='bottom',
+#                                           orientation='h',
+#                                           len=0.3,
+#                                           x=0.7,
+#                                           y=-0.3),
+#                             showscale=True
+#                         ), showlegend=False,
+#                         ))
+# fig.add_trace(go.Scatter(x=np.array(xp_hist[::jump]).ravel(), y=np.array(yp_hist[::jump]).ravel(), 
+#                          mode='markers', 
+#                          marker=dict(
+#                             size=3,
+#                             color=tp_hist[::jump],
+#                             colorscale='Plasma', 
+#                             colorbar=dict(title=r'Proper Time £\tau£', 
+#                                           titleside='bottom', 
+#                                           orientation='h',
+#                                           len=0.3,
+#                                           x=0.3,
+#                                           y=-0.3),
+#                             showscale=True
+#                         ), showlegend=False,
+#                         ), )
+# fig.update_xaxes(title_text="£x,x'£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', )
+# fig.update_yaxes(title_text="£y,y'£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', title_standoff=20)
+
+
+# fig = px.line(x=np.array(t_ref[::jump]).ravel(), y=np.array(tp_hist[::jump]).ravel())
+# fig.update_xaxes(title_text="Coordinate Time £t£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', )
+# fig.update_yaxes(title_text=r"Proper Time £\tau£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', title_standoff=20)
+
+
+dt = 0.001
+time_vec = np.arange(0, len(distances) * dt, dt)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=time_vec[::jump], y=distances[::jump], showlegend=False, line=dict(width=3)))
+fig.update_xaxes(title_text="Coordinate Time £t£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+                 zerolinecolor='rgba(0.0, 0, 0, 0.5)', )
+fig.update_yaxes(title_text=r"Distance £D£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+                 zerolinecolor='rgba(0.0, 0, 0, 0.5)', title_standoff=20)
+
+fig.update_layout(plot_bgcolor='white', paper_bgcolor='white', width=1200, height=600, margin=dict(l=10, r=10, t=10, b=10, pad=0))
+fig.show()
+
+# fig.write_image("/home/fbartelt/Documents/Projetos/dissertation/figures/lorentz_inert_mov.svg")
+#%%
 # Makes x-y axis equal in range
 # fig.update_scenes(xaxis=dict(range=[np.min(xp_hist)*1.1, np.max(xp_hist)*1.1]), 
 #                   yaxis=dict(range=[np.min(xp_hist)*1.1, np.max(xp_hist)*1.1]))
@@ -140,6 +219,19 @@ px.line(distances, title='D').show()
 
 df = pd.read_csv('/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/LORENTZ_closeidx.csv', header=None)
 
+#%%
+x1, x2, x3 = [], [], []
+
+for H in curve:
+    x_ = H @ np.array([1, 1, 1, 1]).reshape(-1, 1)
+    x1.append(x_[0])
+    x2.append(x_[1])
+    x3.append(x_[-1])
+x1 = np.array(x1).ravel()
+x2 = np.array(x2).ravel()
+x3 = np.array(x3).ravel()
+
+go.Figure(go.Scatter3d(x=x1, y=x2, z=x3))
 # %%
 import plotly.express as px
 import plotly.graph_objects as go
