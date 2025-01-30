@@ -1,5 +1,4 @@
-#ifndef LIEGROUP_HPP
-#define LIEGROUP_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 
@@ -19,5 +18,3 @@ public:
         return algebra_;
     }
 };
-
-#endif // LIEGROUP_HPP

@@ -1,5 +1,4 @@
-#ifndef SPECIAL_EUCLIDEAN_GROUP_HPP
-#define SPECIAL_EUCLIDEAN_GROUP_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 #include <iostream>
@@ -73,5 +72,3 @@ class SE3 : public GeneralLinearGroupBase<SE3, se3> {
 };
 
 using SEN = SpecialEuclideanGroup;
-
-#endif  // SPECIAL_EUCLIDEAN_GROUP_HPP

@@ -1,5 +1,4 @@
-#ifndef VECTORFIELD_HPP
-#define VECTORFIELD_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
@@ -512,5 +511,3 @@ inline Eigen::VectorXd VectorField<SE3>::normalComponent(
 //     return normalComponent(state, min_dist, min_index);
 //   }
 // }
-
-#endif  // VECTORFIELD_HPP

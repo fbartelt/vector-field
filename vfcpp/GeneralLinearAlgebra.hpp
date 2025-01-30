@@ -1,5 +1,4 @@
-#ifndef GENERAL_LINEAR_ALGEBRA_HPP
-#define GENERAL_LINEAR_ALGEBRA_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
@@ -21,6 +20,12 @@ class GeneralLinearAlgebraBase : public LieAlgebra<DerivedAlgebra> {
   GeneralLinearAlgebraBase(int n)
       : n_(n), dim_(n * n), matrix_(Eigen::MatrixXd::Zero(n, n)) {}
   int dim() const { return dim_; }
+
+  std::string repr() const { 
+    std::ostringstream oss;
+    oss << "Element of " << name_ << signature_ << ":" << std::endl << matrix_;
+    return oss.str();
+  }
 
   void print() const {
     std::cout << "Element of " << name_ << signature_ << ":" << std::endl
@@ -118,5 +123,3 @@ class GeneralLinearAlgebra
     return invS(A.matrix_);
   }
 };
-
-#endif  // SPECIAL_EUCLIDEAN_ALGEBRA_HPP

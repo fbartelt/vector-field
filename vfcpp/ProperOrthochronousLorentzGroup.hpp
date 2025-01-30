@@ -1,5 +1,4 @@
-#ifndef PROPER_ORTHOCHRONOUS_LORENTZ_GROUP_HPP
-#define PROPER_ORTHOCHRONOUS_LORENTZ_GROUP_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 #include <iostream>
@@ -54,5 +53,3 @@ class ProperOrthochronousLorentzGroup
 };
 
 using SO31 = ProperOrthochronousLorentzGroup;
-
-#endif  // PROPER_ORTHOCHRONOUS_LORENTZ_GROUP_HPP

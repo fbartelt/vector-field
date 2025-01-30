@@ -1,5 +1,4 @@
-#ifndef GENERAL_LINEAR_GROUP_HPP
-#define GENERAL_LINEAR_GROUP_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 #include <iostream>
@@ -27,6 +26,12 @@ class GeneralLinearGroupBase : public LieGroup<DerivedAlgebra> {
   int n() const { return n_; }
   const Eigen::MatrixXd& matrix() const { return matrix_; }
   void setMatrix(const Eigen::MatrixXd& matrix) { matrix_ = matrix; }
+
+  std::string repr() const {
+    std::ostringstream oss;
+    oss << "Element of " << name_ << signature_ << std::endl << matrix_;
+    return oss.str();
+  }
 
   void print() const {
     std::cout << "Element of " << name_ << signature_ << std::endl
@@ -167,5 +172,3 @@ class GeneralLinearGroup
     signature_ = other.signature_;
   }
 };
-
-#endif  // SPECIAL_EUCLIDEAN_GROUP_H

@@ -1,5 +1,4 @@
-#ifndef PROPER_ORTHOCHRONOUS_LORENTZ_ALGEBRA_HPP
-#define PROPER_ORTHOCHRONOUS_LORENTZ_ALGEBRA_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 
@@ -80,5 +79,3 @@ Eigen::VectorXd ProperOrthochronousLorentzAlgebra::invS(
 };
 
 using so31 = ProperOrthochronousLorentzAlgebra;
-
-#endif  // INDEFINITESPECIALORTHOGONALALGEBRA_HPP

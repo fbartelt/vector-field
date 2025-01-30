@@ -1,5 +1,4 @@
-#ifndef LIEALGEBRA_HPP
-#define LIEALGEBRA_HPP
+#pragma once
 
 #include <eigen3/Eigen/Dense>
 
@@ -15,5 +14,3 @@ public:
 
     // Optional: You can add common functionality for all LieAlgebra classes here
 };
-
-#endif // LIEALGEBRA_HPP
