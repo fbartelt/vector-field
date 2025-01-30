@@ -211,7 +211,7 @@ void test_VectorField() {
   double vel_x_var = 0.09;
   double vel_y = 0.85;
   double vel_y_var = 0.05;
-  double epsilon = 0.0001;
+  double epsilon = 0.00001;
   double ds = 0.001;
   std::vector<Eigen::MatrixXd> curve = genCurve(npoints, vel_x, vel_x_var, vel_y, vel_y_var);
   std::cout << "Curve first point: " << std::endl << curve[0] << std::endl;
