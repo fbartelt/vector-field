@@ -46,9 +46,9 @@ ProperOrthochronousLorentzAlgebra ProperOrthochronousLorentzAlgebra::S(
   // Create an nxn matrix filled with zeros using Eigen
   Eigen::MatrixXd S_ = Eigen::MatrixXd::Zero(n_, n_);
 
-  S_(0, 1) = xi(0);
+  S_(0, 1) = -xi(2);
   S_(0, 2) = xi(1);
-  S_(1, 2) = xi(2);
+  S_(1, 2) = -xi(0);
   S_ = S_ - S_.transpose().eval();
 
   S_(0, 3) = xi(3);
@@ -69,9 +69,9 @@ Eigen::VectorXd ProperOrthochronousLorentzAlgebra::invS(
 
   Eigen::VectorXd xi = Eigen::VectorXd::Zero(dim_);
 
-  xi(0) = A(0, 1);
+  xi(0) = -A(1, 2);
   xi(1) = A(0, 2);
-  xi(2) = A(1, 2);
+  xi(2) = -A(0, 1);
   xi(3) = A(0, 3);
   xi(4) = A(1, 3);
   xi(5) = A(2, 3);

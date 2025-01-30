@@ -1,12 +1,14 @@
 #%%
-import uaibot as ub
-from uaibot.utils import Utils
-from uaibot.simulation import Simulation
-from uaibot.simobjects.frame import Frame
-from uaibot.simobjects.pointcloud import PointCloud
-from uaibot.simobjects.ball import Ball
+# import uaibot as ub
+# from uaibot.utils import Utils
+# from uaibot.simulation import Simulation
+# from uaibot.simobjects.frame import Frame
+# from uaibot.simobjects.pointcloud import PointCloud
+# from uaibot.simobjects.ball import Ball
+
 import numpy as np
 import csv
+from scipy.linalg import expm, logm
 
 def read_csv_and_restore(filename, isvfdata=True):
     iteration_results = []
@@ -41,9 +43,10 @@ def read_csv_and_restore(filename, isvfdata=True):
 
 # Example usage:
 option = ''
-results = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/vf_data{option}.csv')
-curve = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/curve_data{option}.csv', isvfdata=False)
-states = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/iteration_data{option}.csv', isvfdata=False)
+pref = 'LORENTZ_'
+results = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}vf_data{option}.csv')
+curve = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}curve_data{option}.csv', isvfdata=False)
+states = read_csv_and_restore(f'/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/{pref}iteration_data{option}.csv', isvfdata=False)
 
 #%%
 dt = 0.01
@@ -76,6 +79,8 @@ sim.set_parameters(
 sim.run()
 # %%
 import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
 closest_points, tangents, normals, distances = zip(*results)
 
 norms = []
@@ -85,7 +90,149 @@ for normal, tangent in zip(normals, tangents):
     xit = np.array(tangent).reshape(-1, 1)
     norms.append(float(180/np.pi * np.arccos((xin.T @ xit) / (1e-6 + np.linalg.norm(xin) * np.linalg.norm(xit)))))
 
-px.line(norms)
+# px.line(norms)
+xp_hist, yp_hist, zp_hist, tp_hist = [], [], [], []
+x_ref, y_ref, z_ref, t_ref = [], [], [], []
+proper_time = []
+invariants = []
+elapsed_time = 0
+dt = 0.001
+for i, H in enumerate(states):
+    t = i * dt
+    ang = 3 * ((2 * np.pi) / (len(states) * dt)) * t
+    radius = 15
+    
+    # MOTION IN INERTIAL
+    x = np.array([radius*np.cos(ang) -12, radius*np.sin(ang) - 12, 1, t]).reshape(-1, 1)
+    # x = np.array([1, -5*t, 1, t]).reshape(-1, 1)
+    # x = np.array([-100, -10, 0, t]).reshape(-1, 1)
+    xp = H @ x
+    gamma = H[0, 0]
+    v = -H[0, -1] / gamma
+    delta_tau = dt / gamma
+    elapsed_time += delta_tau
+    tp_hist.append(elapsed_time)
+    t_ref.append(t)
+
+    # MOTION IN RELATIVISTIC
+    # xp = np.array([radius*np.cos(ang) -12, radius*np.sin(ang) - 12, 1, t]).reshape(-1, 1)
+    # x = np.linalg.inv(H) @ xp
+    # delta_tau = dt * gamma
+    # elapsed_time += delta_tau
+    # tp_hist.append(t)
+    # t_ref.append(elapsed_time)
+    
+    xp_hist.append(xp[0])
+    yp_hist.append(xp[1])
+    zp_hist.append(xp[2])
+    
+    x_ref.append(x[0])
+    y_ref.append(x[1])
+    z_ref.append(x[2])
+    
+    invariants.append(xp[0]**2 + xp[1]**2 + xp[2]**2 - xp[3]**2)
+
+for i in range(len(xp_hist) - 1):
+    delta_x = xp_hist[i + 1] - xp_hist[i]
+    delta_y = yp_hist[i + 1] - yp_hist[i]
+    delta_z = zp_hist[i + 1] - zp_hist[i]
+    delta_t = tp_hist[i + 1] - tp_hist[i]
+    proper_time.append(np.sqrt(delta_x**2 + delta_y**2 + delta_z**2 - delta_t**2))
+    
+
+# px.line(x=np.array(xp_hist).ravel(), y=np.array(yp_hist).ravel(), title='xpos').show()
+# fig=go.Figure(go.Scatter3d(x=np.array(xp_hist).ravel(), 
+#                            y=np.array(yp_hist).ravel(), 
+#                            z=np.array(zp_hist).ravel(), 
+#                            mode='lines', name='rel.', line=dict(width=4)))
+# fig.add_trace(go.Scatter3d(x=np.array(x_ref).ravel(), 
+#                            y=np.array(y_ref).ravel(), 
+#                            z=np.array(z_ref).ravel(), 
+#                            mode='lines', name='real', line=dict(width=4)))
+
+fig = go.Figure()
+jump=10
+fig.add_trace(go.Scatter(x=np.array(x_ref[::jump]).ravel(), y=np.array(y_ref[::jump]).ravel(), 
+                         mode='markers', 
+                         marker=dict(
+                            size=3,
+                            color=t_ref[::jump],
+                            colorscale='Agsunset', 
+                            colorbar=dict(title='Coord. Time £t£', 
+                                          titleside='bottom',
+                                          orientation='h',
+                                          len=0.3,
+                                          x=0.7,
+                                          y=-0.3),
+                            showscale=True
+                        ), showlegend=False,
+                        ))
+fig.add_trace(go.Scatter(x=np.array(xp_hist[::jump]).ravel(), y=np.array(yp_hist[::jump]).ravel(), 
+                         mode='markers', 
+                         marker=dict(
+                            size=3,
+                            color=tp_hist[::jump],
+                            colorscale='Plasma', 
+                            colorbar=dict(title=r'Proper Time £\tau£', 
+                                          titleside='bottom', 
+                                          orientation='h',
+                                          len=0.3,
+                                          x=0.3,
+                                          y=-0.3),
+                            showscale=True
+                        ), showlegend=False,
+                        ), )
+fig.update_xaxes(title_text="£x,x'£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+                 zerolinecolor='rgba(0.0, 0, 0, 0.5)', )
+fig.update_yaxes(title_text="£y,y'£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+                 zerolinecolor='rgba(0.0, 0, 0, 0.5)', title_standoff=20)
+
+
+# fig = px.line(x=np.array(t_ref[::jump]).ravel(), y=np.array(tp_hist[::jump]).ravel())
+# fig.update_xaxes(title_text="Coordinate Time £t£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', )
+# fig.update_yaxes(title_text=r"Proper Time £\tau£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', title_standoff=20)
+
+
+dt = 0.001
+time_vec = np.arange(0, len(distances) * dt, dt)
+
+# fig = go.Figure()
+# fig.add_trace(go.Scatter(x=time_vec[::jump], y=distances[::jump], showlegend=False, line=dict(width=3)))
+# fig.update_xaxes(title_text="Coordinate Time £t£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', )
+# fig.update_yaxes(title_text=r"Distance £D£", tickprefix="£", ticksuffix="£",gridcolor='rgba(0.0, 0, 0, 0.5)', 
+#                  zerolinecolor='rgba(0.0, 0, 0, 0.5)', title_standoff=20)
+
+fig.update_layout(plot_bgcolor='white', paper_bgcolor='white', width=1200, height=600, margin=dict(l=10, r=10, t=10, b=10, pad=0))
+fig.show()
+
+# fig.write_image("/home/fbartelt/Documents/Projetos/dissertation/figures/lorentz_inert_mov.svg")
+#%%
+import plotly.express as px
+# Makes x-y axis equal in range
+# fig.update_scenes(xaxis=dict(range=[np.min(xp_hist)*1.1, np.max(xp_hist)*1.1]), 
+#                   yaxis=dict(range=[np.min(xp_hist)*1.1, np.max(xp_hist)*1.1]))
+# fig.show()
+px.line(x=np.array(t_ref).ravel(), y=np.array(tp_hist).ravel(), title='time').show()
+px.line(distances, title='D').show()
+
+df = pd.read_csv('/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/LORENTZ_closeidx.csv', header=None)
+
+#%%
+x1, x2, x3 = [], [], []
+
+for H in curve:
+    x_ = H @ np.array([1, 1, 1, 1]).reshape(-1, 1)
+    x1.append(x_[0])
+    x2.append(x_[1])
+    x3.append(x_[-1])
+x1 = np.array(x1).ravel()
+x2 = np.array(x2).ravel()
+x3 = np.array(x3).ravel()
+
+go.Figure(go.Scatter3d(x=x1, y=x2, z=x3))
 # %%
 import plotly.express as px
 import plotly.graph_objects as go
@@ -127,7 +274,7 @@ fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
 fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
                   width=718.110, height=605.9155)
 fig.show()
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/distance_pos_ori_D.svg")
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/distance_pos_ori_D.svg")
 #%%
 """Plot distance D"""
 import plotly.graph_objects as go
@@ -146,7 +293,7 @@ fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
                   width=718.110, height=403.937)
 
 fig.show()
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/distanceD.svg")
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/distanceD.svg")
 # %%
 import plotly.graph_objects as go
 closest_points, tangents, normals, distances = zip(*results)
@@ -213,8 +360,8 @@ curve_positions = np.array(curve_positions).reshape(-1, 3)
 vfs = np.array(vfs).reshape(-1, 3)
 obj_frames = np.array(obj_frames).reshape(-1, 3, 3)
 
-final_ball = 1450 # 499 for 1st, 970 for 2nd, 1450 for 3rd
-init_ball = 970  # 0 for 1st, 499 for 2nd, 970 for 3rd
+final_ball = 0 # 499 for 1st, 970 for 2nd, 1450 for 3rd
+init_ball = len(obj_positions) -1 # 0 for 1st, 499 for 2nd, 970 for 3rd
 xticks = [-2, 1.1]
 yticks = [-1.2, 1.1]
 zticks = [0, 1.3] 
@@ -289,7 +436,7 @@ fig.update_layout(**args)
 
 # fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
 fig.show()
-fig.write_image("/home/fbartelt/Documents/Artigos/figures/vf_automatica_3.pdf")
+# fig.write_image("/home/fbartelt/Documents/Artigos/figures/vf_automatica_3.pdf")
 # %%
 """ PLOT CURVE WITH FRAMES -- CBA presentation"""
 import plotly.express as px
@@ -405,4 +552,12 @@ fig.show()
 # fig.write_image("/home/fbartelt/Documents/Projetos/dissertation/figures/curve_with_frames.svg")
 # import plotly.io as pio
 # pio.write_image(fig, '/home/fbartelt/Documents/Projetos/dissertation/figures/curve_with_frames.svg',scale=2, width=718.110, height=403.937)
+# %%
+""" TEST APPROX NORMAL VS EXPLICIT"""
+import pandas as pd
+import plotly.express as px
+
+df = pd.read_csv('/home/fbartelt/Documents/Projetos/vector-field/vfcpp/logs/NEW_normerr.csv', header=None)
+df.dropna(inplace=True)
+px.line(df)
 # %%

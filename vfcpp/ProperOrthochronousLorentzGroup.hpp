@@ -38,7 +38,7 @@ class ProperOrthochronousLorentzGroup
     dim_ = 6;
     name_ = "SO⁺";
     signature_ = "(3,1)";
-    matrix_ = random();
+    matrix_ = mat;
   }
 
   ProperOrthochronousLorentzGroup(const ProperOrthochronousLorentzGroup& other)
