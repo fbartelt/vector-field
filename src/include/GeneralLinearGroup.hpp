@@ -3,6 +3,8 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 #include "GeneralLinearAlgebra.hpp"
 #include "LieGroup.hpp"
@@ -29,7 +31,7 @@ class GeneralLinearGroupBase : public LieGroup<DerivedAlgebra> {
 
   std::string repr() const {
     std::ostringstream oss;
-    oss << "Element of " << name_ << signature_ << std::endl << matrix_;
+    oss << name_ << signature_ << ":\n[" << matrix_.format(Eigen::IOFormat(4, 0, ", ", ",\n ", "[", "]")) << "]";
     return oss.str();
   }
 

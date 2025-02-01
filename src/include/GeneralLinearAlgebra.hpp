@@ -4,6 +4,8 @@
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 #include "LieAlgebra.hpp"
 
@@ -23,7 +25,7 @@ class GeneralLinearAlgebraBase : public LieAlgebra<DerivedAlgebra> {
 
   std::string repr() const { 
     std::ostringstream oss;
-    oss << "Element of " << name_ << signature_ << ":" << std::endl << matrix_;
+    oss << name_ << signature_ << ":\n[" << matrix_.format(Eigen::IOFormat(4, 0, ", ", ",\n ", "[", "]")) << "]";
     return oss.str();
   }
 
